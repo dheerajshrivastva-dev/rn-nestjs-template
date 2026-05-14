@@ -1,0 +1,48 @@
+{
+  "name": "forge-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "React Native + NestJS monorepo template with auth, notifications, FCM, offline sync, and Material Design 3 UI",
+  "scripts": {
+    "dev:app": "pnpm --filter forge-app start",
+    "dev:service": "pnpm --filter forge-backend start:dev",
+    "dev:all": "pnpm --parallel --filter forge-app --filter forge-backend run start:dev",
+    "android": "pnpm --filter forge-app android",
+    "ios": "pnpm --filter forge-app ios",
+    "build:service": "pnpm --filter forge-backend build",
+    "build:all": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "install:all": "pnpm install"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10.0.0"
+  },
+  "packageManager": "pnpm@10.22.0",
+  "keywords": [
+    "template",
+    "monorepo",
+    "pnpm",
+    "react-native",
+    "nestjs",
+    "material-design-3"
+  ],
+  "author": "",
+  "license": "ISC",
+  "pnpm": {
+    "overrides": {
+      "fast-xml-parser": ">=5.3.6",
+      "@isaacs/brace-expansion": ">=5.0.1",
+      "minimatch": ">=10.2.1",
+      "bn.js": ">=5.2.3",
+      "ajv": ">=8.18.0",
+      "diff": ">=4.0.4",
+      "qs": ">=6.14.2",
+      "lodash": ">=4.17.23",
+      "webpack": ">=5.104.1"
+    }
+  }
+}

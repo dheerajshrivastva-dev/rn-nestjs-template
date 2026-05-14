@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+build/
+*.log
+*.tgz
+
+# Environment files
+.env
+.env.local
+.env.*.local
+**/.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# pnpm
+.pnpm-debug.log
+.pnpm-store/
+
+# React Native
+.expo/
+.expo-shared/
+android/app/google-services.json
+android/keystore.properties
+android/**/*.jks
+android/**/*.keystore
+android/gradle.properties
+
+# Firebase admin SDK key
+*-adminsdk-*.json
+
+# Coverage
+coverage/
+*.orig
