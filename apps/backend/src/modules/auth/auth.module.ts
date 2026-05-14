@@ -8,6 +8,9 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { GeoIpService } from './geo-ip.service';
+import { SystemToken } from './system-tokens/system-token.entity';
+import { SystemTokenService } from './system-tokens/system-token.service';
+import { SystemTokenController } from './system-tokens/system-token.controller';
 import { User } from '../user/entities/user.entity';
 import { UserSession } from '../user/entities/user-session.entity';
 import { LoginAttempt } from '../user/entities/login-attempt.entity';
@@ -19,7 +22,10 @@ import { AuditModule } from '../audit/audit.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, UserSession, LoginAttempt, TwoFactorAuth, UserBiometric]),
+    TypeOrmModule.forFeature([
+      User, UserSession, LoginAttempt, TwoFactorAuth, UserBiometric,
+      SystemToken,
+    ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       useFactory: (configService: ConfigService) => ({
@@ -30,12 +36,12 @@ import { AuditModule } from '../audit/audit.module';
       }),
       inject: [ConfigService],
     }),
-    OtpModule, // Import OtpModule to use OtpService
-    NotificationModule, // Import NotificationModule to use NotificationService
-    AuditModule, // Import AuditModule to use AuditService
+    OtpModule,
+    NotificationModule,
+    AuditModule,
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy, GeoIpService],
-  exports: [AuthService, JwtStrategy, PassportModule],
+  controllers: [AuthController, SystemTokenController],
+  providers: [AuthService, JwtStrategy, GoogleStrategy, GeoIpService, SystemTokenService],
+  exports: [AuthService, JwtStrategy, PassportModule, SystemTokenService],
 })
 export class AuthModule {}

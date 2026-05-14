@@ -73,15 +73,9 @@ export enum SmsType {
 }
 
 // ─── Audit ───────────────────────────────────────────────────────────────────
-
-export enum AuditAction {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LOGIN = 'login',
-  LOGOUT = 'logout',
-  // TODO: Add app-specific audit actions here
-}
+// Canonical source: src/modules/audit/entities/audit-log.entity.ts
+// Re-exported here for convenience so consumers import from '@common/enums'
+export { AuditAction } from '../../modules/audit/entities/audit-log.entity';
 
 // ─── Device ───────────────────────────────────────────────────────────────────
 
