@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  # NestJS Application
+  # PostgreSQL and Redis are managed by Coolify
+  app:
+    build:
+      context: ../..
+      dockerfile: apps/demi-service/Dockerfile.prod
+    container_name: demi-app-prod
+    restart: always
+    environment:
+      NODE_ENV: production
+      DB_HOST: ${DB_HOST}
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_SYNC: "false"
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      APP_RELEASES_PATH: /data/releases
+      APP_RELEASES_KEEP: 50
+      APP_RELEASES_MAX_SIZE_MB: 1024
+    volumes:
+      - app_releases:/data/releases
+    networks:
+      - demi-network
+      - coolify
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "local"
+      options:
+        max-size: "20m"
+        max-file: "14"
+        compress: "true"
+    deploy:
+      resources:
+        limits:
+          memory: 1200m
+        reservations:
+          memory: 512m
+
+volumes:
+  app_releases:
+    driver: local
+
+networks:
+  demi-network:
+    driver: bridge
+  coolify:
+    external: true

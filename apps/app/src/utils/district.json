@@ -1,0 +1,312 @@
+[
+  {
+    "stateCode": "BR",
+    "districtCode": "001",
+    "name": "Araria"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "002",
+    "name": "Arwal"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "003",
+    "name": "Aurangabad"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "004",
+    "name": "Banka"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "005",
+    "name": "Begusarai"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "006",
+    "name": "Bhagalpur"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "007",
+    "name": "Bhojpur"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "008",
+    "name": "Buxar"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "009",
+    "name": "Darbhanga"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "010",
+    "name": "East Champaran"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "011",
+    "name": "Gaya"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "012",
+    "name": "Gopalganj"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "013",
+    "name": "Jamui"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "014",
+    "name": "Jehanabad"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "015",
+    "name": "Kaimur"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "016",
+    "name": "Katihar"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "017",
+    "name": "Khagaria"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "018",
+    "name": "Kishanganj"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "019",
+    "name": "Lakhisarai"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "020",
+    "name": "Madhepura"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "021",
+    "name": "Madhubani"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "022",
+    "name": "Munger"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "023",
+    "name": "Muzaffarpur"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "024",
+    "name": "Nalanda"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "025",
+    "name": "Nawada"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "026",
+    "name": "Patna"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "027",
+    "name": "Purnia"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "028",
+    "name": "Rohtas"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "029",
+    "name": "Saharsa"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "030",
+    "name": "Samastipur"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "031",
+    "name": "Saran"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "032",
+    "name": "Sheikhpura"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "033",
+    "name": "Sheohar"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "034",
+    "name": "Sitamarhi"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "035",
+    "name": "Siwan"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "036",
+    "name": "Supaul"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "037",
+    "name": "Vaishali"
+  },
+  {
+    "stateCode": "BR",
+    "districtCode": "038",
+    "name": "West Champaran"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "101",
+    "name": "Bokaro"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "102",
+    "name": "Chatra"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "103",
+    "name": "Deoghar"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "104",
+    "name": "Dhanbad"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "105",
+    "name": "Dumka"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "106",
+    "name": "East Singhbhum"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "107",
+    "name": "Garhwa"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "108",
+    "name": "Giridih"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "109",
+    "name": "Godda"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "110",
+    "name": "Gumla"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "111",
+    "name": "Hazaribagh"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "112",
+    "name": "Jamtara"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "113",
+    "name": "Khunti"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "114",
+    "name": "Koderma"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "115",
+    "name": "Latehar"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "116",
+    "name": "Lohardaga"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "117",
+    "name": "Pakur"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "118",
+    "name": "Palamu"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "119",
+    "name": "Ramgarh"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "120",
+    "name": "Ranchi"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "121",
+    "name": "Sahebganj"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "122",
+    "name": "Seraikela Kharsawan"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "123",
+    "name": "Simdega"
+  },
+  {
+    "stateCode": "JH",
+    "districtCode": "124",
+    "name": "West Singhbhum"
+  }
+]

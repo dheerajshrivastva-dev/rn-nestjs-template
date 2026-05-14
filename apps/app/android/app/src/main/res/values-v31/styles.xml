@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Override Theme.BootSplash for API 31+ to use the scaled logo drawable.
+         This prevents the full-size zoomed icon on the Android 12 native splash. -->
+    <style name="BootTheme" parent="Theme.BootSplash">
+        <item name="bootSplashBackground">@color/bootsplash_background</item>
+        <item name="bootSplashLogo">@drawable/bootsplash_logo</item>
+        <item name="postBootSplashTheme">@style/AppTheme</item>
+        <item name="android:windowSplashScreenBackground">@color/bootsplash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/bootsplash_logo_scaled</item>
+        <item name="android:statusBarColor">@color/bootsplash_background</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

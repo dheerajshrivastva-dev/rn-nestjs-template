@@ -1,0 +1,48 @@
+<h2>Device Unenroll Confirmation</h2>
+
+<p>Hi {{userName}},</p>
+
+<p>You have requested to unenroll a managed device from MDM. Please review the details below before confirming.</p>
+
+{{#if hasClient}}
+<div class="info-box">
+  <p><strong>Client Information</strong></p>
+  <p>• Name: {{clientName}}</p>
+  {{#if clientEmail}}<p>• Email: {{clientEmail}}</p>{{/if}}
+  {{#if clientPhone}}<p>• Phone: {{clientPhone}}</p>{{/if}}
+  {{#if clientAddress}}<p>• Address: {{clientAddress}}</p>{{/if}}
+</div>
+
+<div class="info-box">
+  <p><strong>Device Information</strong></p>
+  {{#if deviceBrand}}<p>• Brand / Model: {{deviceBrand}} {{deviceModel}}</p>{{/if}}
+  {{#if imei1}}<p>• IMEI 1: {{imei1}}</p>{{/if}}
+  {{#if imei2}}<p>• IMEI 2: {{imei2}}</p>{{/if}}
+</div>
+{{/if}}
+
+{{#if hasEmi}}
+<div class="info-box">
+  <p><strong>EMI Summary</strong></p>
+  <p>• Total EMIs: {{totalEmis}} &nbsp;|&nbsp; Paid: {{paidEmis}} &nbsp;|&nbsp; Missed: {{missedEmis}} &nbsp;|&nbsp; Upcoming: {{upcomingEmis}}</p>
+  {{#if emiAmount}}<p>• Monthly EMI: ₹{{emiAmount}}</p>{{/if}}
+  {{#if totalAmount}}<p>• Total Amount: ₹{{totalAmount}}</p>{{/if}}
+  {{#if downPayment}}<p>• Down Payment: ₹{{downPayment}}</p>{{/if}}
+  <p>• Amount Collected: ₹{{totalPaid}}</p>
+  <p>• Remaining Balance: ₹{{remainingAmount}}</p>
+</div>
+{{/if}}
+
+<div class="otp-container">
+  <p style="margin: 0; color: #666; font-size: 14px;">Your Confirmation OTP</p>
+  <div class="otp-code">{{otp}}</div>
+  <p style="margin: 0; color: #666; font-size: 14px;">Valid for {{expiryMinutes}} minutes</p>
+</div>
+
+<p style="margin-top: 25px; font-size: 15px; color: #e74c3c;">
+  <strong>⚠️ Warning:</strong> This will permanently remove MDM control from the device. If you did not initiate this request, contact your administrator immediately.
+</p>
+
+<p style="margin-top: 20px; color: #999; font-size: 14px;">
+  This is an automated message, please do not reply to this email.
+</p>

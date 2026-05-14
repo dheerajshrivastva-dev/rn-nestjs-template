@@ -1,0 +1,151 @@
+services:
+  # PostgreSQL 16 Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: forge-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: forge_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+      TZ: Asia/Kolkata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - forge-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis - For caching, sessions, and Bull queues
+  redis:
+    image: redis:7-alpine
+    container_name: forge-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass redis123
+    ports:
+      - "6380:6379"  # Changed to 6380 to avoid conflict with local Redis
+    volumes:
+      - redis_data:/data
+    networks:
+      - forge-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # MinIO - S3-compatible object storage (for development)
+  minio:
+    image: minio/minio:latest
+    container_name: forge-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console UI
+    volumes:
+      - minio_data:/data
+    networks:
+      - forge-network
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # Mailpit - Email testing (replaces MailHog, more modern)
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: forge-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP server
+      - "8025:8025"  # Web UI
+    networks:
+      - forge-network
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  # Redis Commander - Redis GUI (optional, for debugging)
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: forge-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:redis123
+    ports:
+      - "8081:8081"
+    networks:
+      - forge-network
+    depends_on:
+      - redis
+
+  # Jaeger - Distributed Tracing UI
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: forge-jaeger
+    restart: unless-stopped
+    ports:
+      - "5775:5775/udp"   # Accept zipkin.thrift over compact thrift protocol (deprecated)
+      - "6831:6831/udp"   # Accept jaeger.thrift over compact thrift protocol
+      - "6832:6832/udp"   # Accept jaeger.thrift over binary thrift protocol
+      - "5778:5778"       # Serve configs
+      - "16686:16686"     # Jaeger UI
+      - "14250:14250"     # Accept model.proto
+      - "14268:14268"     # Accept jaeger.thrift directly from clients
+      - "14269:14269"     # Admin port: health check at / and metrics at /metrics
+      - "4317:4317"       # OTLP gRPC receiver
+      - "4318:4318"       # OTLP HTTP receiver
+      - "9411:9411"       # Zipkin compatible endpoint
+    volumes:
+      - ./jaeger/jaeger-ui.json:/etc/jaeger/jaeger-ui.json:ro
+      - ./jaeger/dark-theme.css:/etc/jaeger/dark-theme.css:ro
+    networks:
+      - forge-network
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+      LOG_LEVEL: info
+      QUERY_UI_CONFIG: /etc/jaeger/jaeger-ui.json
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:14269/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Adminer - Lightweight Database UI
+  adminer:
+    image: adminer:latest
+    container_name: forge-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"  # Web UI
+    networks:
+      - forge-network
+    depends_on:
+      - postgres
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+      ADMINER_DESIGN: dracula
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  forge-network:
+    driver: bridge

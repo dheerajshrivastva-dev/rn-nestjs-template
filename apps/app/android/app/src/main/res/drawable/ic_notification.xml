@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Android notification icon — monochrome (white on transparent).
+  DU mark scaled to fill the full icon area.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:viewportWidth="100"
+    android:viewportHeight="100"
+    android:width="24dp"
+    android:height="24dp">
+    <group
+        android:scaleX="1.5"
+        android:scaleY="1.5"
+        android:pivotX="49"
+        android:pivotY="39">
+        <!-- D mark -->
+        <path
+            android:fillType="evenOdd"
+            android:pathData="M38.3193 18C38.8313 18 39.2583 18.1714 39.5996 18.5127L46 24.9121C46.3626 25.2748 46.5439 25.7017 46.5439 26.1924V52.4326C46.5439 52.9443 46.3624 53.3707 46 53.7119L39.5996 60.1123C39.2583 60.4749 38.8313 60.6562 38.3193 60.6562H18.7998C18.2665 60.6562 18.0001 60.3896 18 59.8564V18.7998C18.0001 18.2668 18.2666 18 18.7998 18H38.3193ZM28.6875 52.1123H34.5439C35.4398 52.1122 35.8877 51.5149 35.8877 50.3203V28.3359C35.8876 27.1202 35.4398 26.5128 34.5439 26.5127H28.6875V52.1123Z"
+            android:fillColor="#FFFFFF" />
+        <!-- U mark -->
+        <path
+            android:pathData="M63.3174 25.4561C63.8506 25.4561 64.118 25.7228 64.1182 26.2559V51.1523C64.1182 52.1549 64.6085 52.6562 65.5898 52.6562H69.9736V26.2559C69.9738 25.7229 70.2405 25.4562 70.7734 25.4561H79.3174C79.8506 25.4561 80.118 25.7228 80.1182 26.2559V59.8564C80.1181 60.3896 79.8507 60.6562 79.3174 60.6562H62.1982C61.6863 60.6562 61.2593 60.4749 60.918 60.1123L54.5176 53.7119C54.1552 53.3707 53.9737 52.9443 53.9736 52.4326V26.2559C53.9738 25.7229 54.2405 25.4562 54.7734 25.4561H63.3174Z"
+            android:fillColor="#FFFFFF" />
+    </group>
+</vector>

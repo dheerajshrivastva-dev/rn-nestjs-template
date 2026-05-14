@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Renders bootsplash_logo at ~50% size inside the Android 12+ splash icon area.
+     The icon area is ~240dp; 60dp inset on each side gives ~120dp effective logo size. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/bootsplash_logo"
+    android:insetLeft="200dp"
+    android:insetTop="200dp"
+    android:insetRight="200dp"
+    android:insetBottom="200dp" />

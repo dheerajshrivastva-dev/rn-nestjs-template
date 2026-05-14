@@ -1,0 +1,30 @@
+pluginManagement {
+    includeBuild("../../../node_modules/@react-native/gradle-plugin")
+}
+
+plugins {
+    id("com.facebook.react.settings")
+}
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex ->
+    ex.autolinkLibrariesFromCommand()
+}
+
+rootProject.name = "Duetech"
+include(":app")
+
+dependencyResolutionManagement {
+    repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+    repositories {
+        google()
+        mavenCentral()
+
+        // JitPack — required for @react-native-community/blur (BlurView)
+        maven { url("https://jitpack.io") }
+
+        // ✅ Correct monorepo path to react-native Android artifacts
+        maven {
+            url(file("../../../node_modules/react-native/android"))
+        }
+    }
+}

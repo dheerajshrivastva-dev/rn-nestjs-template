@@ -1,0 +1,31 @@
+<h2>Two-Factor Authentication Code</h2>
+
+<p>Hi {{userName}},</p>
+
+<p>When 2FA is enabled on your Duetech account for security reasons, we need to verify your identity. To complete the login process, please use the verification code below.</p>
+
+<div class="otp-container">
+    <p style="margin: 0; color: #666; font-size: 14px;">Your Authentication Code</p>
+    <div class="otp-code">{{otp}}</div>
+    <p style="margin: 0; color: #666; font-size: 14px;">Valid for {{expiryMinutes}} minutes</p>
+</div>
+
+<div class="info-box">
+    <p><strong>Login Details:</strong></p>
+    <p>• Time: {{loginTime}}</p>
+    <p>• Location: {{loginLocation}}</p>
+    <p>• Device: {{loginDevice}}</p>
+</div>
+
+<p style="margin-top: 25px; font-size: 15px; color: #e74c3c;">
+    <strong>⚠️ Warning:</strong> If you didn't attempt to log in, your account may be compromised. Please change your password immediately and contact our support team.
+</p>
+
+<p style="margin-top: 20px;">
+    <strong>Need help?</strong><br>
+    Contact our security team if you notice any suspicious activity.
+</p>
+
+<p style="margin-top: 20px; color: #999; font-size: 14px;">
+    This is an automated message, please do not reply to this email.
+</p>

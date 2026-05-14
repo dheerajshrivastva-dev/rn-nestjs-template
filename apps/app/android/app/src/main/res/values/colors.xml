@@ -1,0 +1,6 @@
+<resources>
+    <color name="bootsplash_background">#ffffff</color>
+    <color name="ic_launcher_background">#ffffff</color>
+    <!-- FCM notification accent color (shown as icon tint on some Android versions) -->
+    <color name="notification_color">#FF5555</color>
+</resources>

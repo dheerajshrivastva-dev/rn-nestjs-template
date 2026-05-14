@@ -1,0 +1,62 @@
+/*
+ * Jaeger UI v1.76 – Dark Theme Override
+ * Overrides the light-mode :root CSS variables only.
+ * No browser prefers-color-scheme dependency.
+ */
+
+:root {
+  /* Surfaces */
+  --surface-primary:                    #0f1117;
+  --surface-secondary:                  #1a1d27;
+  --surface-tertiary:                   #22263a;
+  --surface-overlay:                    rgba(0, 0, 0, 0.7);
+  --surface-component-item-background:  #3a3f5c;
+  --surface-component-background:       #2e3248;
+  --surface-component-background-hover: #3a3f5c;
+
+  /* Text */
+  --text-primary:   rgba(232, 234, 240, 0.92);
+  --text-secondary: rgba(157, 163, 180, 0.85);
+  --text-muted:     #5c6280;
+  --text-inverse:   #e8eaf0;
+  --text-link:      #7c8ef7;
+  --text-link-hover: #a0aaff;
+
+  /* Borders */
+  --border-default:          #2e3248;
+  --border-subtle:           rgba(255, 255, 255, 0.08);
+  --border-strong:           #3a3f5c;
+  --border-strongest:        #5c6280;
+  --border-component-subtle: rgba(255, 255, 255, 0.05);
+
+  /* Interactive */
+  --interactive-primary:        #7c8ef7;
+  --interactive-primary-hover:  #6070e0;
+  --interactive-secondary:      #5c6ef7;
+  --interactive-primary-light:  #3a4080;
+  --interactive-primary-rgb:    124, 142, 247;
+  --interactive-primary-opaque: rgba(124, 142, 247, 0.4);
+
+  /* Feedback */
+  --feedback-error:   #e05c68;
+  --feedback-warning: #f0a04a;
+  --feedback-success: #4caf82;
+  --feedback-info:    #5b9ef7;
+
+  /* Shadows */
+  --shadow-sm:             0 2px 4px rgba(0, 0, 0, 0.5);
+  --shadow-md:             0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg:             0 8px 24px rgba(0, 0, 0, 0.7);
+  --shadow-component-focus: 0 0 0 2px rgba(124, 142, 247, 0.4);
+
+  /* Controls */
+  --control-subtle-default: rgba(255, 255, 255, 0.15);
+  --control-subtle-hover:   rgba(255, 255, 255, 0.25);
+  --control-subtle-muted:   rgba(255, 255, 255, 0.10);
+
+  /* Resizer */
+  --resizer-drag-bg: rgba(124, 142, 247, 0.08);
+
+  /* Trace highlight */
+  --trace-emphasis-highlight: rgba(124, 142, 247, 0.15);
+}

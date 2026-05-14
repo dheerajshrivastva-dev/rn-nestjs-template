@@ -1,0 +1,85 @@
+# Multi-stage Production Dockerfile for monorepo
+# Build context must be the MONOREPO ROOT (demigod/)
+# Stage 1: Build
+FROM node:24.11.1-alpine AS builder
+
+WORKDIR /app
+
+# Install dependencies for native modules (bcrypt, etc.)
+RUN apk add --no-cache python3 make g++
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy monorepo root manifests (unmodified, so lockfile matches patchedDependencies)
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+
+# Copy patches directory (needed during install to satisfy lockfile patchedDependencies)
+COPY patches/ ./patches/
+
+# Copy only the backend package.json
+COPY apps/demi-service/package.json ./apps/demi-service/
+
+# Install backend dependencies (lockfile intact, patches present — no mismatch)
+RUN pnpm install --frozen-lockfile --filter demi-backend...
+
+# Copy backend source code
+COPY apps/demi-service/ ./apps/demi-service/
+
+# Build the backend
+RUN pnpm --filter demi-backend build
+
+# Strip patchedDependencies AFTER install+build, only for the deploy step.
+# The patch is for the React Native app, not the backend — deploy would fail on unused patches.
+RUN sed -i '/^patchedDependencies:/,/^[^ \t]/{ /^patchedDependencies:/d; /^[[:space:]]/d }' pnpm-workspace.yaml
+
+# Deploy production-only deps to a clean directory
+# --legacy: pnpm v10 flag for workspaces without inject-workspace-packages
+RUN pnpm --filter demi-backend --prod deploy --legacy /prod/app
+
+# Stage 2: Production
+FROM node:24.11.1-alpine
+
+WORKDIR /app
+
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Create non-root user
+RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
+
+# Copy production node_modules and package.json from deploy output
+COPY --from=builder --chown=nodejs:nodejs /prod/app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /prod/app/package.json ./
+
+# Copy compiled dist (pnpm deploy doesn't include dist/)
+COPY --from=builder --chown=nodejs:nodejs /app/apps/demi-service/dist ./dist
+
+# Copy public static files (download page, etc.) — nest-cli copies them to dist/ during build
+# but we also keep them at /app/public so main.ts can find them via path.join(__dirname, '..', 'public')
+COPY --from=builder --chown=nodejs:nodejs /app/apps/demi-service/public ./public
+
+# Pre-create the releases directory with correct ownership so the non-root user
+# can write to it when APP_RELEASES_PATH=/data/releases is set via env var.
+# The directory must exist before switching user; the volume mount will overlay it
+# at runtime but will inherit the ownership set here.
+RUN mkdir -p /data/releases && chown nodejs:nodejs /data/releases
+
+# Switch to non-root user
+USER nodejs
+
+# Expose port
+EXPOSE 3000
+
+# Set environment
+ENV NODE_ENV=production
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/api/v1/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["node", "dist/main.js"]

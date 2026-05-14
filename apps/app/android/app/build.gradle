@@ -1,0 +1,249 @@
+apply plugin: "com.android.application"
+
+// Read version and buildNumber from package.json
+// To upload a new build: bump "buildNumber" in apps/demiAdmin/package.json
+// versionName = "major.minor.patch" (display name, e.g. "0.0.1")
+// versionCode  = buildNumber (must increase with every Play Store upload)
+def packageJsonText = file("../../package.json").text
+def appVersionName = (packageJsonText =~ /"version":\s*"([^"]+)"/)[0][1]
+def appVersionCode = (packageJsonText =~ /"buildNumber":\s*(\d+)/)[0][1].toInteger()
+
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
+// Firebase — must be applied AFTER com.android.application
+apply plugin: "com.google.gms.google-services"
+// react-native-config — load .env into BuildConfig + native resources
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
+
+/**
+ * This is the configuration block to customize your React Native Android app.
+ * By default you don't need to apply any configuration, just uncomment the lines you need.
+ */
+react {
+    /* Folders */
+    //   The root of your project, i.e. where "package.json" lives. Default is '../..'
+    root = file("../../../../")
+    //   The folder where the react-native NPM package is. Default is ../../node_modules/react-native
+    reactNativeDir = file("../../../../node_modules/react-native")
+    //   The folder where the react-native Codegen package is. Default is ../../node_modules/@react-native/codegen
+    codegenDir = file("../../../../node_modules/@react-native/codegen")
+    //   Custom shim: strips the "bundle" subcommand that Gradle adds and delegates
+    //   to react-native/scripts/bundle.js (RN 0.82 — community CLI removed bundle cmd)
+    cliFile = file("../../scripts/rn-bundle-cli.js")
+
+    /* Variants */
+    //   The list of variants to that are debuggable. For those we're going to
+    //   skip the bundling of the JS bundle and the assets. By default is just 'debug'.
+    //   If you add flavors like lite, prod, etc. you'll have to list your debuggableVariants.
+    // debuggableVariants = ["liteDebug", "prodDebug"]
+
+    /* Bundling */
+    //   A list containing the node command and its flags. Default is just 'node'.
+    // nodeExecutableAndArgs = ["node"]
+    //
+    //   The command to run when bundling. By default is 'bundle'
+    // bundleCommand = "ram-bundle"
+    //
+    //   The path to the CLI configuration file. Default is empty.
+    // bundleConfig = file(../rn-cli.config.js)
+    //
+    //   The name of the generated asset file containing your JS bundle
+    // bundleAssetName = "MyApplication.android.bundle"
+    //
+    //   The entry file for bundle generation. Default is 'index.android.js' or 'index.js'
+    //   Explicit path needed because root is set to monorepo root (../../../../)
+    entryFile = file("../../index.js")
+    //
+    //   A list of extra flags to pass to the 'bundle' commands.
+    //   See https://github.com/react-native-community/cli/blob/main/docs/commands.md#bundle
+    // extraPackagerArgs = []
+
+    /* Hermes Commands */
+    //   The hermes compiler command to run. By default it is 'hermesc'
+    // hermesCommand = "$rootDir/my-custom-hermesc/bin/hermesc"
+    //
+    //   Hermes optimisation for release builds
+    hermesFlags = ["-O", "-output-source-map"]
+
+    /* Autolinking */
+    autolinkLibrariesWithApp()
+}
+
+/**
+ * Enable Proguard + R8 full mode for release builds.
+ * R8 (default since AGP 3.4) handles shrinking, obfuscation, and optimization.
+ */
+def enableProguardInReleaseBuilds = true
+
+/**
+ * The preferred build flavor of JavaScriptCore (JSC)
+ *
+ * For example, to use the international variant, you can use:
+ * `def jscFlavor = io.github.react-native-community:jsc-android-intl:2026004.+`
+ *
+ * The international variant includes ICU i18n library and necessary data
+ * allowing to use e.g. `Date.toLocaleString` and `String.localeCompare` that
+ * give correct results when using with locales other than en-US. Note that
+ * this variant is about 6MiB larger per architecture than default.
+ */
+def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
+
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file("keystore.properties")
+if (keystorePropsFile.exists()) {
+    keystoreProps.load(new FileInputStream(keystorePropsFile))
+} else {
+    println("Warning: keystore.properties file not found. Using default debug signing configuration.")
+}
+
+project.ext.sentryCli = [
+    logLevel: "warn",
+    flavorAware: false,
+    sentryProperties: file("../sentry.properties").absolutePath
+]
+// Disable Sentry's built-in auto-upload (controlled via env var in sentry.gradle).
+// Our custom sentryUploadRelease task handles source map upload instead.
+project.ext.shouldSentryAutoUploadGeneral = { -> return false }
+project.ext.shouldSentryAutoUploadNative = { -> return false }
+project.ext.shouldSentryAutoUpload = { -> return false }
+apply from: new File(["node", "--print", "require.resolve('@sentry/react-native/package.json')"].execute().text.trim(), "../sentry.gradle")
+android {
+    ndkVersion rootProject.ext.ndkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdk rootProject.ext.compileSdkVersion
+
+    namespace "in.duetech.admin"
+    defaultConfig {
+        applicationId "in.duetech.admin"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode appVersionCode
+        versionName appVersionName
+    }
+    signingConfigs {
+        release {
+            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
+                storeFile file(MYAPP_UPLOAD_STORE_FILE)
+                storePassword MYAPP_UPLOAD_STORE_PASSWORD
+                keyAlias MYAPP_UPLOAD_KEY_ALIAS
+                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+            }
+        }
+        debug {
+            storeFile file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            // Caution! In production, you need to generate your own keystore file.
+            // see https://reactnative.dev/docs/signed-apk-android.
+            signingConfig signingConfigs.release
+            minifyEnabled enableProguardInReleaseBuilds
+            // Strip unused resources (drawables, strings, layouts, etc.)
+            shrinkResources enableProguardInReleaseBuilds
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            debuggable false
+            zipAlignEnabled true
+        }
+    }
+
+    // Single APK for arm64-v8a only (covers all modern Android phones)
+    splits {
+        abi {
+            enable true
+            reset()
+            include "arm64-v8a"
+            universalApk false
+        }
+    }
+
+    // Rename output APK to: duetech-admin-<version>-<buildCode>-arm64-v8a-<buildType>.apk
+    android.applicationVariants.all { variant ->
+        variant.outputs.each { output ->
+            def abiFilter = output.getFilter(com.android.build.OutputFile.ABI)
+            def abiSuffix = abiFilter ? "-${abiFilter}" : ""
+            output.versionCodeOverride = variant.versionCode
+            output.outputFileName = "duetech-admin-${appVersionName}-${variant.versionCode}${abiSuffix}-${variant.buildType.name}.apk"
+        }
+    }
+}
+
+project.ext.vectoricons = [
+    iconFontsDir: "../../../../node_modules/react-native-vector-icons/Fonts"
+]
+
+apply from: file("../../../../node_modules/react-native-vector-icons/fonts.gradle")
+
+dependencies {
+    // The version of react-native is set by the React Native Gradle Plugin
+    implementation("com.facebook.react:react-android")
+
+    if (hermesEnabled.toBoolean()) {
+        implementation("com.facebook.react:hermes-android")
+    } else {
+        implementation jscFlavor
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Sentry source-map upload — runs automatically after every release bundle
+// ---------------------------------------------------------------------------
+android.applicationVariants.all { variant ->
+    if (variant.buildType.name != "release") return
+
+    def variantCapitalized = variant.name.capitalize()
+    def bundleFile  = file("${buildDir}/generated/assets/react/release/index.android.bundle")
+    def sourcemapFile = file("${buildDir}/generated/sourcemaps/react/release/index.android.bundle.map")
+    def hermesCmd   = "${android.sdkDirectory}/build-tools/${android.buildToolsVersion}/lib/d8"
+    def sentryCliPath = ["node", "--print",
+        "require.resolve('@sentry/cli/bin/sentry-cli')"].execute([], rootDir).text.trim()
+    def sentryProps = file("../sentry.properties").absolutePath
+    def releaseName = "${android.defaultConfig.applicationId}@${appVersionName}+${appVersionCode}"
+    def dist        = "${appVersionCode}"
+
+    // Task: generate JS bundle + source map using Metro
+    tasks.register("sentrybundle${variantCapitalized}", Exec) {
+        group = "sentry"
+        description = "Bundle JS + source map for Sentry upload"
+        // projectDir = apps/duetech-admin/android/app — go up to apps/duetech-admin
+        def appRoot = file("../..").canonicalFile
+        def nodeScript = new File(appRoot, "scripts/rn-bundle-cli.js").absolutePath
+        workingDir appRoot
+        commandLine "node", nodeScript, "bundle",
+            "--platform", "android",
+            "--dev", "false",
+            "--entry-file", "index.js",
+            "--bundle-output", bundleFile.absolutePath,
+            "--sourcemap-output", sourcemapFile.absolutePath
+        doFirst {
+            bundleFile.parentFile.mkdirs()
+            sourcemapFile.parentFile.mkdirs()
+        }
+    }
+
+    // Task: upload bundle + source map to Sentry
+    tasks.register("sentryUpload${variantCapitalized}", Exec) {
+        group = "sentry"
+        description = "Upload JS source maps to Sentry"
+        dependsOn "sentrybundle${variantCapitalized}"
+        environment "SENTRY_PROPERTIES", sentryProps
+        commandLine sentryCliPath, "react-native", "gradle",
+            "--bundle",    bundleFile.absolutePath,
+            "--sourcemap", sourcemapFile.absolutePath,
+            "--release",   releaseName,
+            "--dist",      dist
+    }
+
+    // Hook upload task to run after the AAB/APK is packaged
+    afterEvaluate {
+        def packageTask = tasks.findByName("package${variantCapitalized}") ?:
+                          tasks.findByName("bundle${variantCapitalized}")
+        packageTask?.finalizedBy("sentryUpload${variantCapitalized}")
+    }
+}

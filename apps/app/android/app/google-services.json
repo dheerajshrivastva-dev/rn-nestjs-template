@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "230717633854",
+    "project_id": "duetech",
+    "storage_bucket": "duetech.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:230717633854:android:8efeb9c75e5f5d2266e86f",
+        "android_client_info": {
+          "package_name": "in.duetech.admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBaBOusGz1NcNzzxBMU1jISRiQHPjo-fNg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
