@@ -23,27 +23,6 @@ This document describes the complete authentication flow including:
 
 ---
 
-## Role System
-
-```
-SUPER_ADMIN (companyId: NULL, hierarchyLevel: 0) — requires 2FA
-    └── Company A
-        └── SUPER (companyId: A, hierarchyLevel: 1)
-            ├── DISTRIBUTOR 1 (companyId: A, hierarchyLevel: 2)
-            │   └── RETAILER 1 (companyId: A, hierarchyLevel: 3)
-            └── DISTRIBUTOR 2 (companyId: A, hierarchyLevel: 2)
-                └── RETAILER 2 (companyId: A, hierarchyLevel: 3)
-```
-
-| Role | Level | companyId | parentUserId |
-|------|-------|-----------|--------------|
-| SUPER_ADMIN | 0 | NULL | NULL |
-| SUPER | 1 | set | NULL |
-| DISTRIBUTOR | 2 | set | SUPER |
-| RETAILER | 2 or 3 | set | SUPER or DISTRIBUTOR |
-
----
-
 ## 1. Login Flow
 
 **Endpoint**: `POST /api/v1/auth/login` ✅
@@ -58,7 +37,7 @@ SUPER_ADMIN (companyId: NULL, hierarchyLevel: 0) — requires 2FA
     "deviceName": "Samsung Galaxy S24",
     "deviceType": "mobile",
     "deviceFingerprint": "sha256hash...",
-    "userAgent": "demiAdmin/Android"
+    "userAgent": "YourApp/Android"
   }
 }
 ```
@@ -107,9 +86,9 @@ SUPER_ADMIN (companyId: NULL, hierarchyLevel: 0) — requires 2FA
   "refreshToken": "eyJ...",
   "user": {
     "id": "uuid",
-    "name": "John Distributor",
-    "email": "john@company-a.com",
-    "role": "super",
+    "name": "John Smith",
+    "email": "john@example.com",
+    "role": "admin",
     "status": "ACTIVE"
   }
 }
@@ -197,8 +176,8 @@ d) Biometric (fingerprint/PIN as 2FA): ✅
   "refreshToken": "eyJ...",
   "user": {
     "id": "uuid",
-    "name": "John Distributor",
-    "role": "super",
+    "name": "John Smith",
+    "role": "admin",
     "status": "ACTIVE"
   }
 }
@@ -235,7 +214,7 @@ Triggered by `PinSetupScreen` after successful password login.
 
 #### PIN Storage (Client-Side Only)
 
-- PIN (4–6 digits) is **hashed locally** with a fixed app salt: `demigod_pin_v1_2026`
+- PIN (4–6 digits) is **hashed locally** with a fixed app salt: `yourapp_pin_v1` (configure per project)
 - Hash stored in **Keychain** (secure OS storage, no biometric lock required)
 - **PIN never sent to server** — it only gates the biometric API call
 - Max **3 PIN attempts** before biometric data is wiped → forced password login
@@ -281,7 +260,7 @@ Response: `{ "challenge": "random-nonce" }`
 
 ```json
 {
-  "email": "john@company-a.com",
+  "email": "john@example.com",
   "deviceFingerprint": "unique-device-id",
   "challenge": "nonce-from-challenge-endpoint",
   "signature": "base64-encoded-rsa-signature",
@@ -324,7 +303,7 @@ Disables biometric for the current device. Useful for "remove this device" flows
 **Endpoint**: `POST /api/v1/auth/forgot-password` ✅
 
 ```json
-{ "email": "john@company-a.com" }
+{ "email": "john@example.com" }
 ```
 
 ```
@@ -459,9 +438,9 @@ When 2FA is enabled (TOTP or SMS), **8 one-time recovery codes** are generated.
 
 **Sample `.txt` content** (when downloaded):
 ```
-Demigod Recovery Codes
+Recovery Codes
 Generated: 2026-02-19
-Account: john@company-a.com
+Account: john@example.com
 
 ABCD-EFGH-IJ
 KLMN-OPQR-ST
