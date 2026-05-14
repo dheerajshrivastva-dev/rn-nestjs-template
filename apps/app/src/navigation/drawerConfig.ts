@@ -1,277 +1,80 @@
 /**
- * Drawer Navigation Configuration (2026 – Stack-based)
- * ✅ CORRECT: Drawer menu references STACKS, not individual screens
- * Role-based drawer menu for 4-tier hierarchy
+ * Drawer Navigation Configuration
  *
- * Hierarchy:
- * SUPER_ADMIN → SUPER → DISTRIBUTOR → RETAILER
+ * Role-based drawer menu. Add role-specific sections as your app grows.
  *
- * Mental Model:
- * - Drawer = Building directory (top-level sections)
- * - Stack = Floors inside building (screens within a section)
+ * Usage:
+ * ```ts
+ * const sections = getDrawerSections(user.role);
+ * ```
  */
 
-import { UserRole } from "../api/types";
-import { StackNames, type StackName } from "./types";
+import { UserRole } from '../api/types';
 
 /* =====================================================
-   DrawerSection Type (Stack-based)
+   Types
    ===================================================== */
 export type AppDrawerSection =
-  | { type: "header"; title: string }
-  | { type: "divider" }
-  | {
-      type: "item";
-      label: string;
-      icon: string;
-      route: StackName;
-      action?: never;
-    }
-  | {
-      type: "item";
-      label: string;
-      icon: string;
-      action: "logout";
-      route?: never;
-    };
+  | { type: 'header'; title: string }
+  | { type: 'divider' }
+  | { type: 'item'; label: string; icon: string; screen: string; action?: never }
+  | { type: 'item'; label: string; icon: string; action: 'logout'; screen?: never };
 
 /* =====================================================
    Public API
    ===================================================== */
 export const getDrawerSections = (role: UserRole): AppDrawerSection[] => {
   switch (role) {
-    case UserRole.SUPER_ADMIN:
-      return superAdminSections();
-    case UserRole.SUPER:
-      return superSections();
-    case UserRole.DISTRIBUTOR:
-      return distributorSections();
-    case UserRole.RETAILER:
+    case UserRole.ADMIN:
+      return adminSections();
+    case UserRole.MANAGER:
+      return managerSections();
+    case UserRole.USER:
     default:
-      return retailerSections();
+      return userSections();
   }
 };
 
 /* =====================================================
-   SUPER ADMIN
+   ADMIN
    ===================================================== */
-const superAdminSections = (): AppDrawerSection[] => [
-  { type: "header", title: "Super Admin" },
+const adminSections = (): AppDrawerSection[] => [
+  { type: 'header', title: 'Admin' },
+  { type: 'item', label: 'Dashboard', icon: 'view-dashboard', screen: 'dashboard/main' },
 
-  {
-    type: "item",
-    label: "Dashboard",
-    icon: "view-dashboard",
-    route: StackNames.Dashboard,
-  },
-  {
-    type: "item",
-    label: "Orders",
-    icon: "clipboard-list",
-    route: StackNames.Orders,
-  },
-  {
-    type: "item",
-    label: "Users",
-    icon: "account-group",
-    route: StackNames.Users,
-  },
-  {
-    type: "item",
-    label: "Companies",
-    icon: "office-building",
-    route: StackNames.Companies,
-  },
+  { type: 'divider' },
 
-  { type: "divider" },
-  { type: "header", title: "System" },
-
-  {
-    type: "item",
-    label: "System",
-    icon: "cog",
-    route: StackNames.System,
-  },
-
-  { type: "divider" },
-
-  {
-    type: "item",
-    label: "Profile",
-    icon: "account",
-    route: StackNames.Profile,
-  },
-  {
-    type: "item",
-    label: "Logout",
-    icon: "logout",
-    action: "logout",
-  },
+  { type: 'item', label: 'Profile', icon: 'account', screen: 'account/center' },
+  { type: 'item', label: 'Settings', icon: 'cog', screen: 'shared/settings' },
+  { type: 'item', label: 'Logout', icon: 'logout', action: 'logout' },
 ];
 
 /* =====================================================
-   SUPER (Top-level Distributor)
+   MANAGER
    ===================================================== */
-const superSections = (): AppDrawerSection[] => [
-  { type: "header", title: "SUPER Distributor" },
+const managerSections = (): AppDrawerSection[] => [
+  { type: 'header', title: 'Manager' },
+  { type: 'item', label: 'Dashboard', icon: 'view-dashboard', screen: 'dashboard/main' },
 
-  {
-    type: "item",
-    label: "Dashboard",
-    icon: "view-dashboard",
-    route: StackNames.Dashboard,
-  },
-  {
-    type: "item",
-    label: "Users",
-    icon: "account-group",
-    route: StackNames.Users,
-  },
-  {
-    type: "item",
-    label: "Clients",
-    icon: "account",
-    route: StackNames.Clients,
-  },
-  {
-    type: "item",
-    label: "Reports",
-    icon: "chart-line",
-    route: StackNames.Reports,
-  },
+  { type: 'divider' },
 
-  { type: "divider" },
-  { type: "header", title: "Management" },
-
-  {
-    type: "item",
-    label: "Orders",
-    icon: "package-variant",
-    route: StackNames.Orders,
-  },
-
-  { type: "divider" },
-
-  {
-    type: "item",
-    label: "Profile",
-    icon: "account",
-    route: StackNames.Profile,
-  },
-  {
-    type: "item",
-    label: "Logout",
-    icon: "logout",
-    action: "logout",
-  },
+  { type: 'item', label: 'Profile', icon: 'account', screen: 'account/center' },
+  { type: 'item', label: 'Settings', icon: 'cog', screen: 'shared/settings' },
+  { type: 'item', label: 'Logout', icon: 'logout', action: 'logout' },
 ];
 
 /* =====================================================
-   DISTRIBUTOR
+   USER
    ===================================================== */
-const distributorSections = (): AppDrawerSection[] => [
-  { type: "header", title: "Distributor" },
+const userSections = (): AppDrawerSection[] => [
+  { type: 'header', title: 'User' },
+  { type: 'item', label: 'Dashboard', icon: 'view-dashboard', screen: 'dashboard/main' },
 
-  {
-    type: "item",
-    label: "Dashboard",
-    icon: "view-dashboard",
-    route: StackNames.Dashboard,
-  },
-  {
-    type: "item",
-    label: "Retailers",
-    icon: "account-tie",
-    route: StackNames.Users,
-  },
-  {
-    type: "item",
-    label: "Clients",
-    icon: "account",
-    route: StackNames.Clients,
-  },
-  {
-    type: "item",
-    label: "Reports",
-    icon: "chart-line",
-    route: StackNames.Reports,
-  },
+  { type: 'divider' },
 
-  { type: "divider" },
-  { type: "header", title: "Management" },
-
-  {
-    type: "item",
-    label: "Orders",
-    icon: "wallet",
-    route: StackNames.Orders,
-  },
-
-  { type: "divider" },
-
-  {
-    type: "item",
-    label: "Profile",
-    icon: "account",
-    route: StackNames.Profile,
-  },
-  {
-    type: "item",
-    label: "Logout",
-    icon: "logout",
-    action: "logout",
-  },
-];
-
-/* =====================================================
-   RETAILER
-   ===================================================== */
-const retailerSections = (): AppDrawerSection[] => [
-  { type: "header", title: "Retailer" },
-
-  {
-    type: "item",
-    label: "Dashboard",
-    icon: "view-dashboard",
-    route: StackNames.Dashboard,
-  },
-  {
-    type: "item",
-    label: "My Clients",
-    icon: "account-group",
-    route: StackNames.Clients,
-  },
-  {
-    type: "item",
-    label: "Reports",
-    icon: "chart-line",
-    route: StackNames.Reports,
-  },
-
-  { type: "divider" },
-  { type: "header", title: "Management" },
-
-  {
-    type: "item",
-    label: "Orders",
-    icon: "wallet",
-    route: StackNames.Orders,
-  },
-
-  { type: "divider" },
-
-  {
-    type: "item",
-    label: "Profile",
-    icon: "account",
-    route: StackNames.Profile,
-  },
-  {
-    type: "item",
-    label: "Logout",
-    icon: "logout",
-    action: "logout",
-  },
+  { type: 'item', label: 'Profile', icon: 'account', screen: 'account/center' },
+  { type: 'item', label: 'Settings', icon: 'cog', screen: 'shared/settings' },
+  { type: 'item', label: 'Logout', icon: 'logout', action: 'logout' },
 ];
 
 /* =====================================================
@@ -279,15 +82,9 @@ const retailerSections = (): AppDrawerSection[] => [
    ===================================================== */
 export const getRoleDisplayName = (role: UserRole): string => {
   switch (role) {
-    case UserRole.SUPER_ADMIN:
-      return "Super Admin";
-    case UserRole.SUPER:
-      return "SUPER Distributor";
-    case UserRole.DISTRIBUTOR:
-      return "Distributor";
-    case UserRole.RETAILER:
-      return "Retailer";
-    default:
-      return "User";
+    case UserRole.ADMIN: return 'Admin';
+    case UserRole.MANAGER: return 'Manager';
+    case UserRole.USER: return 'User';
+    default: return 'User';
   }
 };

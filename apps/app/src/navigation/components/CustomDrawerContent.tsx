@@ -19,7 +19,7 @@ import { ConfirmDialog } from '@forge/ui';
 
 export const CustomDrawerContent: React.FC<DrawerContentComponentProps> = (props) => {
   const theme = useTheme();
-  const role = useAuthStore(selectUserRole) || UserRole.RETAILER;
+  const role = useAuthStore(selectUserRole) || UserRole.USER;
   const sections = getDrawerSections(role);
   const logoutMutation = useLogout();
 

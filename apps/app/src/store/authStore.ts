@@ -212,8 +212,8 @@ export const selectPendingRoute = (state: AuthState) => state.pendingRoute;
 export const selectPendingBiometricVerification = (state: AuthState) => state.pendingBiometricVerification;
 export const selectPendingPinSetup = (state: AuthState) => state.pendingPinSetup;
 export const selectPendingPinSetupIdentifier = (state: AuthState) => state.pendingPinSetupIdentifier;
-export const selectIsSuperAdmin = (state: AuthState) =>
-  state.user?.role === UserRole.SUPER_ADMIN;
+export const selectIsAdmin = (state: AuthState) =>
+  state.user?.role === UserRole.ADMIN;
 
 // Backwards compatibility selectors
 /** @deprecated Use selectUser instead */
