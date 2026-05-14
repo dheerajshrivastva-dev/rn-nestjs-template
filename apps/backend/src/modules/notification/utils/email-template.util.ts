@@ -1,8 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as Handlebars from 'handlebars';
-import type { Client } from '../../client/entities/client.entity';
-import type { EmiPayment } from '../../client/entities/emi-payment.entity';
+import { BrandingConfig } from '../branding.service';
 
 export interface EmailTemplateData {
   subject: string;
@@ -24,18 +23,18 @@ export interface EmailTemplateData {
 export class EmailTemplateUtil {
   private static templateCache: Map<string, HandlebarsTemplateDelegate> = new Map();
   private static baseTemplate: HandlebarsTemplateDelegate;
-  private static logoBase64: string;
+  private static fallbackLogoBase64: string;
 
   /**
-   * Load logo as base64 data URI (cached after first read)
+   * Load bundled logo as fallback base64 data URI (cached after first read)
    */
-  private static getLogoBase64(): string {
-    if (!this.logoBase64) {
+  private static getFallbackLogoBase64(): string {
+    if (!this.fallbackLogoBase64) {
       const logoPath = path.join(__dirname, '..', 'templates', 'logo.png');
       const logoBuffer = fs.readFileSync(logoPath);
-      this.logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
+      this.fallbackLogoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
     }
-    return this.logoBase64;
+    return this.fallbackLogoBase64;
   }
 
   /**
@@ -71,275 +70,146 @@ export class EmailTemplateUtil {
   }
 
   /**
-   * Render an email template with data
+   * Render an email template with data and optional branding.
+   * Branding vars are prefixed with `brand_` in templates.
    */
   public static renderTemplate(
     templateName: string,
-    data: EmailTemplateData
+    data: EmailTemplateData,
+    branding?: BrandingConfig,
   ): string {
-    // Load the content template
     const contentTemplate = this.loadTemplate(templateName);
-
-    // Render the content
     const contentHtml = contentTemplate(data);
-
-    // Load the base template
     const baseTemplate = this.getBaseTemplate();
 
-    // Merge content into base template
     const fullData = {
       ...data,
       body: contentHtml,
       year: new Date().getFullYear(),
+      // Branding vars — fall back to bundled logo if no BRAND_LOGO_BASE64 set
+      brand_app_name: branding?.appName ?? 'MyApp',
+      brand_support_email: branding?.supportEmail ?? '',
+      brand_logo: branding?.logoBase64 || this.getFallbackLogoBase64(),
+      brand_color: branding?.brandColor ?? '#1976D2',
+      brand_color_dark: branding?.brandColorDark ?? '#1256A0',
+      brand_website_url: branding?.websiteUrl ?? '#',
+      brand_privacy_url: branding?.privacyPolicyUrl ?? '#',
+      brand_terms_url: branding?.termsUrl ?? '#',
+      brand_footer_tagline: branding?.footerTagline ?? '',
     };
 
     return baseTemplate(fullData);
   }
 
-  /**
-   * Render forgot password email
-   */
   public static renderForgotPasswordEmail(data: {
-    toEmail: string;
-    userName: string;
-    otp: string;
-    expiryMinutes?: number;
-  }): string {
+    toEmail: string; userName: string; otp: string; expiryMinutes?: number;
+  }, branding?: BrandingConfig): string {
     return this.renderTemplate('forgot-password', {
-      subject: 'Reset Your Password',
-      headerTitle: 'Password Reset Request',
-      toEmail: data.toEmail,
-      userName: data.userName,
-      otp: data.otp,
+      subject: 'Reset Your Password', headerTitle: 'Password Reset Request',
+      toEmail: data.toEmail, userName: data.userName, otp: data.otp,
       expiryMinutes: data.expiryMinutes || 10,
-    });
+    }, branding);
   }
 
-  /**
-   * Render email verification email
-   */
   public static renderEmailVerificationEmail(data: {
-    toEmail: string;
-    userName: string;
-    otp: string;
-    expiryMinutes?: number;
-  }): string {
+    toEmail: string; userName: string; otp: string; expiryMinutes?: number;
+  }, branding?: BrandingConfig): string {
     return this.renderTemplate('email-verification', {
-      subject: 'Verify Your Email Address',
-      headerTitle: 'Email Verification',
-      toEmail: data.toEmail,
-      userName: data.userName,
-      otp: data.otp,
+      subject: 'Verify Your Email Address', headerTitle: 'Email Verification',
+      toEmail: data.toEmail, userName: data.userName, otp: data.otp,
       expiryMinutes: data.expiryMinutes || 10,
-    });
+    }, branding);
   }
 
-  /**
-   * Render 2FA login email (sent during login when 2FA is already enabled)
-   */
   public static render2FAEmail(data: {
-    toEmail: string;
-    userName: string;
-    otp: string;
-    expiryMinutes?: number;
-    loginTime?: string;
-    loginLocation?: string;
-    loginDevice?: string;
-  }): string {
+    toEmail: string; userName: string; otp: string; expiryMinutes?: number;
+    loginTime?: string; loginLocation?: string; loginDevice?: string;
+  }, branding?: BrandingConfig): string {
     return this.renderTemplate('login-2fa', {
-      subject: 'Two-Factor Authentication Code',
-      headerTitle: 'Login Verification',
-      toEmail: data.toEmail,
-      userName: data.userName,
-      otp: data.otp,
+      subject: 'Two-Factor Authentication Code', headerTitle: 'Login Verification',
+      toEmail: data.toEmail, userName: data.userName, otp: data.otp,
       expiryMinutes: data.expiryMinutes || 10,
       loginTime: data.loginTime || new Date().toLocaleString(),
       loginLocation: data.loginLocation || 'Unknown',
       loginDevice: data.loginDevice || 'Unknown',
-    });
+    }, branding);
   }
 
-  /**
-   * Render 2FA setup email (sent when the user is enabling 2FA for the first time)
-   */
   public static render2FASetupEmail(data: {
-    toEmail: string;
-    userName: string;
-    otp: string;
-    expiryMinutes?: number;
-  }): string {
+    toEmail: string; userName: string; otp: string; expiryMinutes?: number;
+  }, branding?: BrandingConfig): string {
     return this.renderTemplate('2fa-setup', {
-      subject: 'Enable Two-Factor Authentication',
-      headerTitle: '2FA Setup',
-      toEmail: data.toEmail,
-      userName: data.userName,
-      otp: data.otp,
+      subject: 'Enable Two-Factor Authentication', headerTitle: '2FA Setup',
+      toEmail: data.toEmail, userName: data.userName, otp: data.otp,
       expiryMinutes: data.expiryMinutes || 10,
-    });
+    }, branding);
   }
 
-  /**
-   * Render welcome email
-   */
   public static renderWelcomeEmail(data: {
-    toEmail: string;
-    userName: string;
-    userEmail: string;
-    userRole: string;
-    dashboardUrl?: string;
-  }): string {
+    toEmail: string; userName: string; userEmail: string; userRole: string; dashboardUrl?: string;
+  }, branding?: BrandingConfig): string {
     return this.renderTemplate('welcome', {
-      subject: 'Welcome to Demigod!',
+      subject: `Welcome to ${branding?.appName ?? 'MyApp'}!`,
       headerTitle: 'Welcome Aboard!',
-      toEmail: data.toEmail,
-      userName: data.userName,
-      userEmail: data.userEmail,
-      userRole: data.userRole,
+      toEmail: data.toEmail, userName: data.userName,
+      userEmail: data.userEmail, userRole: data.userRole,
       dashboardUrl: data.dashboardUrl || '#',
       createdDate: new Date().toLocaleDateString(),
-    });
+    }, branding);
   }
 
-  /**
-   * Render a generic notification email.
-   * Used as the fallback template for all business event notifications
-   * (order approved, key transfer, payment reminder, etc.)
-   */
   public static renderNotificationEmail(data: {
-    toEmail: string;
-    userName: string;
-    title: string;
-    body: string;
-    actionUrl?: string;
-    actionLabel?: string;
-  }): string {
+    toEmail: string; userName: string; title: string; body: string;
+    actionUrl?: string; actionLabel?: string;
+  }, branding?: BrandingConfig): string {
     return this.renderTemplate('notification', {
-      subject: data.title,
-      headerTitle: data.title,
-      toEmail: data.toEmail,
-      userName: data.userName,
-      title: data.title,
-      body: data.body,
-      actionUrl: data.actionUrl,
-      actionLabel: data.actionLabel || 'Open App',
-    });
+      subject: data.title, headerTitle: data.title,
+      toEmail: data.toEmail, userName: data.userName,
+      title: data.title, body: data.body,
+      actionUrl: data.actionUrl, actionLabel: data.actionLabel || 'Open App',
+    }, branding);
   }
 
-  /**
-   * Render device unenroll OTP email (sent to retailer before unenrolling a device)
-   */
   public static renderDeviceUnenrollOtpEmail(data: {
-    toEmail: string;
-    userName: string;
-    otp: string;
-    expiryMinutes?: number;
-    client?: Client;
-    emiRecords?: EmiPayment[];
-  }): string {
-    const c = data.client;
-    const emis = data.emiRecords ?? [];
-    const paidEmis = emis.filter((e) => e.status === 'paid').length;
-    const missedEmis = emis.filter((e) => e.status === 'missed').length;
-    const upcomingEmis = emis.filter((e) => e.status === 'upcoming').length;
-    const totalPaid = emis
-      .filter((e) => e.status === 'paid')
-      .reduce((sum, e) => sum + Number(e.amount), 0);
-    const remaining = emis
-      .filter((e) => e.status !== 'paid')
-      .reduce((sum, e) => sum + Number(e.amount), 0);
-
+    toEmail: string; userName: string; otp: string; expiryMinutes?: number;
+  }, branding?: BrandingConfig): string {
     return this.renderTemplate('device-unenroll', {
-      subject: 'Device Unenroll Confirmation OTP',
-      headerTitle: 'Device Unenroll Confirmation',
-      toEmail: data.toEmail,
-      userName: data.userName,
-      otp: data.otp,
+      subject: 'Device Unenroll Confirmation OTP', headerTitle: 'Device Unenroll Confirmation',
+      toEmail: data.toEmail, userName: data.userName, otp: data.otp,
       expiryMinutes: data.expiryMinutes || 10,
-      // Client info
-      hasClient: !!c,
-      clientName: c?.clientName,
-      clientEmail: c?.clientEmail,
-      clientPhone: c?.clientPhone1,
-      imei1: c?.actualImei1 ?? c?.imei1,
-      imei2: c?.actualImei2 ?? c?.imei2,
-      deviceModel: c?.deviceModel ?? c?.modelName,
-      deviceBrand: c?.deviceManufacturer ?? c?.brand,
-      clientAddress: c?.address
-        ? [c.address.street, c.address.city, c.address.state, c.address.postalCode]
-            .filter(Boolean)
-            .join(', ')
-        : null,
-      // EMI summary
-      hasEmi: emis.length > 0,
-      totalEmis: emis.length,
-      paidEmis,
-      missedEmis,
-      upcomingEmis,
-      emiAmount: c?.emiAmount,
-      totalAmount: c?.totalAmount,
-      downPayment: c?.downPayment,
-      totalPaid: totalPaid.toFixed(2),
-      remainingAmount: remaining.toFixed(2),
-    });
+    }, branding);
   }
 
-  /**
-   * Render account locked email (sent when login threshold is crossed)
-   */
   public static renderAccountLockedEmail(data: {
-    toEmail: string;
-    userName: string;
-    lockReason: string;
-    lockedAt: string;
-    unlocksAt: string;
-  }): string {
+    toEmail: string; userName: string; lockReason: string; lockedAt: string; unlocksAt: string;
+  }, branding?: BrandingConfig): string {
     return this.renderTemplate('account-locked', {
-      subject: 'Your Account Has Been Temporarily Locked',
-      headerTitle: 'Security Alert',
-      toEmail: data.toEmail,
-      userName: data.userName,
-      lockReason: data.lockReason,
-      lockedAt: data.lockedAt,
-      unlocksAt: data.unlocksAt,
-    });
+      subject: 'Your Account Has Been Temporarily Locked', headerTitle: 'Security Alert',
+      toEmail: data.toEmail, userName: data.userName,
+      lockReason: data.lockReason, lockedAt: data.lockedAt, unlocksAt: data.unlocksAt,
+    }, branding);
   }
 
-  /**
-   * Render account suspended email (sent when a suspended user tries to log in)
-   */
   public static renderAccountSuspendedEmail(data: {
-    toEmail: string;
-    userName: string;
-  }): string {
+    toEmail: string; userName: string;
+  }, branding?: BrandingConfig): string {
     return this.renderTemplate('account-suspended', {
-      subject: 'Your Account Has Been Suspended',
-      headerTitle: 'Account Suspended',
-      toEmail: data.toEmail,
-      userName: data.userName,
-    });
+      subject: 'Your Account Has Been Suspended', headerTitle: 'Account Suspended',
+      toEmail: data.toEmail, userName: data.userName,
+    }, branding);
   }
 
-  /**
-   * Render suspicious login alert email (sent when login from new location is detected)
-   */
   public static renderSuspiciousLoginEmail(data: {
-    toEmail: string;
-    userName: string;
-    loginTime: string;
-    loginLocation: string;
-    loginDevice: string;
-    ipAddress: string;
-  }): string {
+    toEmail: string; userName: string; loginTime: string; loginLocation: string;
+    loginDevice: string; ipAddress: string;
+  }, branding?: BrandingConfig): string {
     return this.renderTemplate('suspicious-login', {
       subject: 'New Login Detected from a Different Location',
       headerTitle: 'Security Alert',
-      toEmail: data.toEmail,
-      userName: data.userName,
-      loginTime: data.loginTime,
-      loginLocation: data.loginLocation,
-      loginDevice: data.loginDevice,
-      ipAddress: data.ipAddress,
-    });
+      toEmail: data.toEmail, userName: data.userName,
+      loginTime: data.loginTime, loginLocation: data.loginLocation,
+      loginDevice: data.loginDevice, ipAddress: data.ipAddress,
+    }, branding);
   }
 
   /**

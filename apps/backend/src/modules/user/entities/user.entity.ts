@@ -9,6 +9,7 @@ import {
   Index,
 } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
 import { UserRole, UserStatus } from '../../../common/enums';
 import { DEFAULT_USER_SETTINGS, UserSettings } from '../../notification/user-settings';
 import { UserSession } from './user-session.entity';
@@ -39,10 +40,28 @@ export class User {
   @Exclude()
   password: string;
 
-  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  @ApiProperty({ enum: UserRole, enumName: 'UserRole', example: UserRole.USER })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    default: UserRole.USER,
+    transformer: {
+      to: (value: UserRole) => value,
+      from: (value: string) => value as UserRole,
+    },
+  })
   role: UserRole;
 
-  @Column({ type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
+  @ApiProperty({ enum: UserStatus, enumName: 'UserStatus', example: UserStatus.ACTIVE })
+  @Column({
+    type: 'varchar',
+    length: 50,
+    default: UserStatus.ACTIVE,
+    transformer: {
+      to: (value: UserStatus) => value,
+      from: (value: string) => value as UserStatus,
+    },
+  })
   status: UserStatus;
 
   @Column({ type: 'varchar', length: 500, name: 'avatar_url', nullable: true })

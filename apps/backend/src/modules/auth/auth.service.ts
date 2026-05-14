@@ -3,6 +3,8 @@ import {
   Logger,
   UnauthorizedException,
   BadRequestException,
+  ForbiddenException,
+  ConflictException,
   NotFoundException,
   Inject,
 } from '@nestjs/common';
@@ -21,12 +23,13 @@ import { UserSession } from '../user/entities/user-session.entity';
 import { LoginAttempt } from '../user/entities/login-attempt.entity';
 import { TwoFactorAuth } from '../user/entities/two-factor-auth.entity';
 import { UserBiometric } from '../user/entities/user-biometric.entity';
-import { UserStatus, OtpType } from '../../common/enums';
+import { UserStatus, UserRole, ROLE_AUTHORITY, OtpType } from '../../common/enums';
 import { OtpService } from '../otp/otp.service';
 import { NotificationService } from '../notification/notification.service';
 import { AuditService } from '../audit/audit.service';
 import { AuditAction } from '../audit/entities/audit-log.entity';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import { DeviceInfoDto } from './dto/device-info.dto';
 import {
   BiometricSetupDto,
@@ -142,7 +145,6 @@ export class AuthService {
     // Update user metadata
     await this.userRepository.update(user.id, {
       lastLoginAt: new Date(),
-      lastLoginIp: deviceInfo.ipAddress,
     });
 
     return {
@@ -150,7 +152,7 @@ export class AuthService {
       refreshToken,
       user: {
         id: user.id,
-        name: user.name,
+        name: user.fullName,
         email: user.email,
         role: user.role,
         status: user.status,
@@ -182,8 +184,7 @@ export class AuthService {
 
     const user = await this.userRepository.findOne({
       where: whereCondition,
-      relations: ['company'],
-    });
+          });
 
     if (!user) {
       await this.logFailedAttempt(identifier, deviceInfo, 'account_not_found');
@@ -199,14 +200,18 @@ export class AuthService {
     }
 
     // 5. Check user status
+    if (user.status === UserStatus.PENDING_APPROVAL) {
+      throw new UnauthorizedException('Account is pending approval by an administrator');
+    }
+
     if (user.status === UserStatus.INACTIVE) {
-      throw new UnauthorizedException('Account pending approval');
+      throw new UnauthorizedException('Account is inactive');
     }
 
     if (user.status === UserStatus.SUSPENDED) {
       // Notify user their account is suspended (fire-and-forget)
       this.notificationService
-        .sendAccountSuspendedEmail(user.id, user.email, user.name)
+        .sendAccountSuspendedEmail(user.id, user.email, user.fullName)
         .catch(() => {});
       throw new UnauthorizedException('Account suspended');
     }
@@ -215,7 +220,7 @@ export class AuthService {
     await this.logSuccessfulAttempt(identifier, deviceInfo, user);
 
     // 7. Check if 2FA enabled
-    if (user.twoFactorEnabled) {
+    if (user.is2FAEnabled) {
       return this.initiate2FA(user, deviceInfo);
     }
 
@@ -343,7 +348,7 @@ export class AuthService {
       await this.notificationService.send2FAEmail(
         user.id,
         user.email,
-        user.name,
+        user.fullName,
         code,
         10,
       );
@@ -392,8 +397,7 @@ export class AuthService {
 
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['company'],
-    });
+          });
 
     if (!user) {
       throw new UnauthorizedException('User not found');
@@ -558,7 +562,7 @@ export class AuthService {
 
       if (lockReason && unlocksAt) {
         this.notificationService
-          .sendAccountLockedEmail(user.id, user.email, user.name, lockReason, unlocksAt)
+          .sendAccountLockedEmail(user.id, user.email, user.fullName, lockReason, unlocksAt)
           .catch(() => {});
       }
     }
@@ -692,7 +696,7 @@ export class AuthService {
       .sendSuspiciousLoginEmail(
         user.id,
         user.email,
-        user.name,
+        user.fullName,
         loginLocation,
         deviceLabel,
         current.deviceInfo?.ipAddress || 'Unknown',
@@ -838,7 +842,7 @@ export class AuthService {
       refreshToken,
       user: {
         id: session.user.id,
-        name: session.user.name,
+        name: session.user.fullName,
         email: session.user.email,
         role: session.user.role,
         status: session.user.status,
@@ -1071,7 +1075,7 @@ export class AuthService {
     const emailResult = await this.notificationService.sendPasswordResetEmail(
       user.id,
       user.email,
-      user.name,
+      user.fullName,
       code,
       10,
     );
@@ -1343,5 +1347,101 @@ export class AuthService {
       { userId, deviceFingerprint, isActive: true },
       { isActive: false },
     );
+  }
+
+  // ─── Registration ──────────────────────────────────────────────────────────
+
+  async register(dto: RegisterDto) {
+    const existing = await this.userRepository.findOne({ where: { email: dto.email } });
+    if (existing) {
+      throw new ConflictException('Email already in use');
+    }
+
+    const hashed = await bcrypt.hash(dto.password, 12);
+
+    const user = this.userRepository.create({
+      firstName: dto.firstName,
+      lastName: dto.lastName,
+      email: dto.email,
+      phone: dto.phone,
+      password: hashed,
+      role: UserRole.USER,
+      status: UserStatus.PENDING_APPROVAL,
+    });
+
+    await this.userRepository.save(user);
+
+    this.logger.log(`New registration pending approval: ${user.email} (id=${user.id})`);
+
+    return {
+      message: 'Registration successful. Your account is pending approval.',
+      userId: user.id,
+    };
+  }
+
+  // ─── Approve / Reject pending users ───────────────────────────────────────
+
+  async approvePendingUser(actorId: string, targetUserId: string) {
+    const [actor, target] = await Promise.all([
+      this.userRepository.findOne({ where: { id: actorId } }),
+      this.userRepository.findOne({ where: { id: targetUserId } }),
+    ]);
+
+    if (!actor) throw new UnauthorizedException('Actor not found');
+    if (!target) throw new NotFoundException('User not found');
+
+    if (target.status !== UserStatus.PENDING_APPROVAL) {
+      throw new BadRequestException(`User is not pending approval (current status: ${target.status})`);
+    }
+
+    // Actor must have strictly higher authority than the target's role
+    if (ROLE_AUTHORITY[actor.role] <= ROLE_AUTHORITY[target.role]) {
+      throw new ForbiddenException('Insufficient authority to approve this user');
+    }
+
+    await this.userRepository.update(target.id, { status: UserStatus.ACTIVE });
+
+    this.logger.log(`User ${target.email} approved by ${actor.email}`);
+
+    return { message: 'User approved successfully', userId: target.id };
+  }
+
+  async rejectPendingUser(actorId: string, targetUserId: string, reason?: string) {
+    const [actor, target] = await Promise.all([
+      this.userRepository.findOne({ where: { id: actorId } }),
+      this.userRepository.findOne({ where: { id: targetUserId } }),
+    ]);
+
+    if (!actor) throw new UnauthorizedException('Actor not found');
+    if (!target) throw new NotFoundException('User not found');
+
+    if (target.status !== UserStatus.PENDING_APPROVAL) {
+      throw new BadRequestException(`User is not pending approval (current status: ${target.status})`);
+    }
+
+    if (ROLE_AUTHORITY[actor.role] <= ROLE_AUTHORITY[target.role]) {
+      throw new ForbiddenException('Insufficient authority to reject this user');
+    }
+
+    await this.userRepository.update(target.id, { status: UserStatus.INACTIVE });
+
+    this.logger.log(`User ${target.email} rejected by ${actor.email}. Reason: ${reason ?? 'none'}`);
+
+    return { message: 'User rejected', userId: target.id };
+  }
+
+  async listPendingUsers(actorId: string) {
+    const actor = await this.userRepository.findOne({ where: { id: actorId } });
+    if (!actor) throw new UnauthorizedException('Actor not found');
+
+    // Return all pending users whose role has lower authority than the actor
+    const pending = await this.userRepository.find({
+      where: { status: UserStatus.PENDING_APPROVAL },
+      select: ['id', 'firstName', 'lastName', 'email', 'phone', 'role', 'createdAt'],
+      order: { createdAt: 'ASC' },
+    });
+
+    // Filter to only those the actor can approve
+    return pending.filter((u) => ROLE_AUTHORITY[actor.role] > ROLE_AUTHORITY[u.role]);
   }
 }

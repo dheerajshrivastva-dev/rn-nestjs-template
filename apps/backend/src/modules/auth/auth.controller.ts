@@ -8,6 +8,8 @@ import {
   HttpCode,
   Param,
   Post,
+  Patch,
+  Query,
   Req,
   Res,
   UseGuards,
@@ -19,8 +21,10 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiParam,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import { Complete2FADto } from './dto/complete-2fa.dto';
 import {
   BiometricSetupDto,
@@ -164,11 +168,115 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 
-  // NOTE: There is no public registration endpoint
-  // Users are created through proper role-based flows:
-  // - SUPER_ADMIN creates companies via POST /api/v1/companies
-  // - Companies add users via POST /api/v1/companies/:companyId/add-admin
-  // Each has proper authorization and role assignment
+  // ============================================================================
+  // Registration & Approval
+  // ============================================================================
+
+  // 10 registrations per hour per IP
+  @Throttle({ default: { limit: 10, ttl: 60 * 60 * 1000 } })
+  @ApiOperation({
+    summary: 'Register a new account',
+    description:
+      'Creates a USER-role account with `status: pending_approval`.\n\n' +
+      'The user **cannot log in** until a MANAGER (authority 50) or ADMIN (authority 100) approves the account via `PATCH /auth/approve/:userId`.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Registration submitted — awaiting approval',
+    schema: {
+      example: {
+        message: 'Registration successful. Your account is pending approval.',
+        userId: 'a1b2c3d4-...',
+      },
+    },
+  })
+  @ApiResponse({ status: 409, description: 'Email already in use' })
+  @ApiResponse({ status: 400, description: 'Validation error' })
+  @Public()
+  @HttpCode(201)
+  @Post('register')
+  async register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
+
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'List users pending approval',
+    description:
+      'Returns pending registrations the current user has authority to approve.\n\n' +
+      '**Authority map:** `ADMIN=100`, `MANAGER=50`, `USER=0`\n\n' +
+      'Only users whose role authority is strictly less than the actor\'s authority are returned.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of pending users',
+    schema: {
+      example: [
+        {
+          id: 'a1b2c3d4-...',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          email: 'jane@example.com',
+          phone: '+919876543210',
+          role: 'user',
+          createdAt: '2026-05-15T10:00:00.000Z',
+        },
+      ],
+    },
+  })
+  @Get('pending-users')
+  async listPendingUsers(@CurrentUser() user: User) {
+    return this.authService.listPendingUsers(user.id);
+  }
+
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Approve a pending user',
+    description:
+      'Sets the user\'s status to `active`, allowing them to log in.\n\n' +
+      '**Authority map:** `ADMIN=100`, `MANAGER=50`, `USER=0`\n\n' +
+      'Actor\'s authority must be strictly greater than the target\'s role authority.',
+  })
+  @ApiParam({ name: 'userId', type: 'string', format: 'uuid', description: 'ID of the user to approve' })
+  @ApiResponse({
+    status: 200,
+    description: 'User approved and activated',
+    schema: { example: { message: 'User approved successfully', userId: 'a1b2c3d4-...' } },
+  })
+  @ApiResponse({ status: 403, description: 'Insufficient authority' })
+  @ApiResponse({ status: 400, description: 'User is not in pending_approval status' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @HttpCode(200)
+  @Patch('approve/:userId')
+  async approveUser(@CurrentUser() user: User, @Param('userId') userId: string) {
+    return this.authService.approvePendingUser(user.id, userId);
+  }
+
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Reject a pending user',
+    description:
+      'Sets the user\'s status to `inactive`. The user cannot log in.\n\n' +
+      'Actor\'s authority must be strictly greater than the target\'s role authority.',
+  })
+  @ApiParam({ name: 'userId', type: 'string', format: 'uuid', description: 'ID of the user to reject' })
+  @ApiResponse({
+    status: 200,
+    description: 'User rejected',
+    schema: { example: { message: 'User rejected', userId: 'a1b2c3d4-...' } },
+  })
+  @ApiResponse({ status: 403, description: 'Insufficient authority' })
+  @ApiResponse({ status: 400, description: 'User is not in pending_approval status' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @HttpCode(200)
+  @Patch('reject/:userId')
+  async rejectUser(
+    @CurrentUser() user: User,
+    @Param('userId') userId: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.authService.rejectPendingUser(user.id, userId, body.reason);
+  }
 
   // NOTE: For user profile, use GET /api/v1/users/me instead
   // This endpoint follows REST principles and SOLID design
@@ -440,42 +548,57 @@ Web clients can use cookies automatically.`,
     return this.authService.revokeOtherSessions(user.id, currentJti);
   }
 
-  // Google OAuth Routes
-  @ApiOperation({ summary: 'Initiate Google OAuth login' })
+  // ============================================================================
+  // Google OAuth
+  // ============================================================================
+
+  @ApiOperation({
+    summary: 'Initiate Google OAuth login / registration',
+    description:
+      'Redirects to Google. Pass `role` to request a specific role on first sign-up.\n\n' +
+      '**Allowed self-request roles:** `user` (default), `manager`\n\n' +
+      'Any other value is silently downgraded to `user`. Existing users keep their current role.\n\n' +
+      'New accounts are created with `status: pending_approval` regardless of role — an admin must approve them.',
+  })
+  @ApiQuery({
+    name: 'role',
+    required: false,
+    enum: ['user', 'manager'],
+    description: 'Requested role for new registrations (ignored for existing accounts)',
+  })
+  @ApiResponse({ status: 302, description: 'Redirect to Google login' })
   @Public()
   @Get('google')
   @UseGuards(GoogleAuthGuard)
-  async googleAuth() {
-    // Initiates Google OAuth flow
-    // User will be redirected to Google login page
+  async googleAuth(@Query('role') role?: string, @Req() req?: any) {
+    // GoogleAuthGuard triggers the redirect — the role is encoded into OAuth
+    // state by overriding authorizationParams() on the guard (see GoogleAuthGuard)
   }
 
-  @ApiOperation({ summary: 'Google OAuth callback' })
+  @ApiOperation({ summary: 'Google OAuth callback (handled by Google)' })
+  @ApiResponse({ status: 302, description: 'Redirect to frontend after auth' })
   @Public()
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   async googleAuthCallback(@Req() req: Request, @Res() res: Response) {
-    // After Google authenticates, user lands here
-    // req.user contains the User object from GoogleStrategy.validate()
-
     const user = req.user as any;
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
 
-    // Extract device info from request
+    // New registration — account needs approval before they can use the app
+    if (user.isNewRegistration) {
+      return (res as any).redirect(`${frontendUrl}/auth/pending-approval`);
+    }
+
     const deviceInfo = {
-      ipAddress: req.ip || req.socket.remoteAddress || '0.0.0.0',
-      userAgent: req.headers['user-agent'],
+      ipAddress: (req as any).ip || (req as any).socket?.remoteAddress || '0.0.0.0',
+      userAgent: (req as any).headers?.['user-agent'],
       deviceName: 'Google OAuth Browser',
       deviceType: 'desktop',
     };
 
-    // Generate JWT tokens for this user
     const tokens = await this.authService.generateTokens(user, deviceInfo);
+    this.setAuthCookies(res as any, tokens.accessToken, tokens.refreshToken);
 
-    // Set HTTP-only cookies
-    this.setAuthCookies(res, tokens.accessToken, tokens.refreshToken);
-
-    // Redirect to frontend dashboard
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    return res.redirect(`${frontendUrl}/dashboard`);
+    return (res as any).redirect(`${frontendUrl}/dashboard`);
   }
 }

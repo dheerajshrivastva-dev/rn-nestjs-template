@@ -9,9 +9,8 @@ import { SendEmailDto } from './dto/send-email.dto';
 import { SendSMSDto } from './dto/send-sms.dto';
 import { SendPushDto } from './dto/send-push.dto';
 import { EmailTemplateUtil } from './utils/email-template.util';
+import { BrandingService } from './branding.service';
 import { ConfigService } from '@nestjs/config';
-import { Client } from '../client/entities/client.entity';
-import { EmiPayment } from '../client/entities/emi-payment.entity';
 
 @Injectable()
 export class NotificationService {
@@ -31,6 +30,7 @@ export class NotificationService {
     @InjectQueue('push')
     private readonly pushQueue: Queue,
     private readonly configService: ConfigService,
+    private readonly brandingService: BrandingService,
   ) {}
 
   /**
@@ -79,19 +79,15 @@ export class NotificationService {
     otp: string,
     expiryMinutes: number = 10,
   ): Promise<EmailQueue> {
-    const htmlContent = EmailTemplateUtil.renderForgotPasswordEmail({
-      toEmail,
-      userName,
-      otp,
-      expiryMinutes,
-    });
+    const branding = this.brandingService.get();
+    const htmlContent = EmailTemplateUtil.renderForgotPasswordEmail({ toEmail, userName, otp, expiryMinutes }, branding);
 
     return this.queueEmail({
       recipientType: 'user',
       recipientId,
       toEmail,
       toName: userName,
-      subject: 'Reset Your Password - Duetech',
+      subject: `Reset Your Password - ${branding.appName}`,
       body: `Your password reset OTP is: ${otp}. Valid for ${expiryMinutes} minutes.`,
       bodyHtml: htmlContent,
       emailType: EmailType.PASSWORD_RESET,
@@ -109,19 +105,15 @@ export class NotificationService {
     otp: string,
     expiryMinutes: number = 10,
   ): Promise<EmailQueue> {
-    const htmlContent = EmailTemplateUtil.renderEmailVerificationEmail({
-      toEmail,
-      userName,
-      otp,
-      expiryMinutes,
-    });
+    const branding = this.brandingService.get();
+    const htmlContent = EmailTemplateUtil.renderEmailVerificationEmail({ toEmail, userName, otp, expiryMinutes }, branding);
 
     return this.queueEmail({
       recipientType: 'user',
       recipientId,
       toEmail,
       toName: userName,
-      subject: 'Verify Your Email - Duetech',
+      subject: `Verify Your Email - ${branding.appName}`,
       body: `Your email verification OTP is: ${otp}. Valid for ${expiryMinutes} minutes.`,
       bodyHtml: htmlContent,
       emailType: EmailType.OTP,
@@ -142,22 +134,15 @@ export class NotificationService {
     loginLocation?: string,
     loginDevice?: string,
   ): Promise<EmailQueue> {
-    const htmlContent = EmailTemplateUtil.render2FAEmail({
-      toEmail,
-      userName,
-      otp,
-      expiryMinutes,
-      loginTime,
-      loginLocation,
-      loginDevice,
-    });
+    const branding = this.brandingService.get();
+    const htmlContent = EmailTemplateUtil.render2FAEmail({ toEmail, userName, otp, expiryMinutes, loginTime, loginLocation, loginDevice }, branding);
 
     return this.queueEmail({
       recipientType: 'user',
       recipientId,
       toEmail,
       toName: userName,
-      subject: 'Two-Factor Authentication - Duetech',
+      subject: `Two-Factor Authentication - ${branding.appName}`,
       body: `Your 2FA code is: ${otp}. Valid for ${expiryMinutes} minutes.`,
       bodyHtml: htmlContent,
       emailType: EmailType.OTP,
@@ -175,19 +160,15 @@ export class NotificationService {
     otp: string,
     expiryMinutes: number = 10,
   ): Promise<EmailQueue> {
-    const htmlContent = EmailTemplateUtil.render2FASetupEmail({
-      toEmail,
-      userName,
-      otp,
-      expiryMinutes,
-    });
+    const branding = this.brandingService.get();
+    const htmlContent = EmailTemplateUtil.render2FASetupEmail({ toEmail, userName, otp, expiryMinutes }, branding);
 
     return this.queueEmail({
       recipientType: 'user',
       recipientId,
       toEmail,
       toName: userName,
-      subject: 'Enable Two-Factor Authentication - Duetech',
+      subject: `Enable Two-Factor Authentication - ${branding.appName}`,
       body: `Your 2FA setup code is: ${otp}. Valid for ${expiryMinutes} minutes.`,
       bodyHtml: htmlContent,
       emailType: EmailType.OTP,
@@ -205,21 +186,16 @@ export class NotificationService {
     userRole: string,
     dashboardUrl?: string,
   ): Promise<EmailQueue> {
-    const htmlContent = EmailTemplateUtil.renderWelcomeEmail({
-      toEmail,
-      userName,
-      userEmail: toEmail,
-      userRole,
-      dashboardUrl,
-    });
+    const branding = this.brandingService.get();
+    const htmlContent = EmailTemplateUtil.renderWelcomeEmail({ toEmail, userName, userEmail: toEmail, userRole, dashboardUrl }, branding);
 
     return this.queueEmail({
       recipientType: 'user',
       recipientId,
       toEmail,
       toName: userName,
-      subject: 'Welcome to Duetech! 🎉',
-      body: `Welcome to Duetech, ${userName}! Your account has been successfully created.`,
+      subject: `Welcome to ${branding.appName}!`,
+      body: `Welcome to ${branding.appName}, ${userName}! Your account has been successfully created.`,
       bodyHtml: htmlContent,
       emailType: EmailType.WELCOME,
       priority: NotificationPriority.NORMAL,
@@ -236,21 +212,20 @@ export class NotificationService {
     lockReason: string,
     unlocksAt: Date,
   ): Promise<EmailQueue> {
+    const branding = this.brandingService.get();
     const now = new Date();
     const htmlContent = EmailTemplateUtil.renderAccountLockedEmail({
-      toEmail,
-      userName,
-      lockReason,
+      toEmail, userName, lockReason,
       lockedAt: now.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
       unlocksAt: unlocksAt.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-    });
+    }, branding);
 
     return this.queueEmail({
       recipientType: 'user',
       recipientId,
       toEmail,
       toName: userName,
-      subject: 'Your Account Has Been Temporarily Locked - Duetech',
+      subject: `Your Account Has Been Temporarily Locked - ${branding.appName}`,
       body: `Your account has been temporarily locked. It will unlock at ${unlocksAt.toLocaleString()}.`,
       bodyHtml: htmlContent,
       emailType: EmailType.SECURITY_ALERT,
@@ -266,18 +241,16 @@ export class NotificationService {
     toEmail: string,
     userName: string,
   ): Promise<EmailQueue> {
-    const htmlContent = EmailTemplateUtil.renderAccountSuspendedEmail({
-      toEmail,
-      userName,
-    });
+    const branding = this.brandingService.get();
+    const htmlContent = EmailTemplateUtil.renderAccountSuspendedEmail({ toEmail, userName }, branding);
 
     return this.queueEmail({
       recipientType: 'user',
       recipientId,
       toEmail,
       toName: userName,
-      subject: 'Your Account Has Been Suspended - Duetech',
-      body: 'Your Duetech account has been suspended. Please contact your administrator to restore access.',
+      subject: `Your Account Has Been Suspended - ${branding.appName}`,
+      body: `Your ${branding.appName} account has been suspended. Please contact your administrator to restore access.`,
       bodyHtml: htmlContent,
       emailType: EmailType.SECURITY_ALERT,
       priority: NotificationPriority.HIGH,
@@ -295,23 +268,17 @@ export class NotificationService {
     loginDevice: string,
     ipAddress: string,
   ): Promise<EmailQueue> {
+    const branding = this.brandingService.get();
     const loginTime = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
-    const htmlContent = EmailTemplateUtil.renderSuspiciousLoginEmail({
-      toEmail,
-      userName,
-      loginTime,
-      loginLocation,
-      loginDevice,
-      ipAddress,
-    });
+    const htmlContent = EmailTemplateUtil.renderSuspiciousLoginEmail({ toEmail, userName, loginTime, loginLocation, loginDevice, ipAddress }, branding);
 
     return this.queueEmail({
       recipientType: 'user',
       recipientId,
       toEmail,
       toName: userName,
-      subject: 'New Login Detected from a Different Location - Duetech',
-      body: `A login was detected to your Duetech account from ${loginLocation} at ${loginTime}. If this was not you, please change your password immediately.`,
+      subject: `New Login Detected from a Different Location - ${branding.appName}`,
+      body: `A login was detected to your ${branding.appName} account from ${loginLocation} at ${loginTime}. If this was not you, please change your password immediately.`,
       bodyHtml: htmlContent,
       emailType: EmailType.SECURITY_ALERT,
       priority: NotificationPriority.HIGH,
@@ -374,24 +341,16 @@ export class NotificationService {
     userName: string,
     otp: string,
     expiryMinutes: number = 10,
-    client?: Client,
-    emiRecords?: EmiPayment[],
   ): Promise<EmailQueue> {
-    const htmlContent = EmailTemplateUtil.renderDeviceUnenrollOtpEmail({
-      toEmail,
-      userName,
-      otp,
-      expiryMinutes,
-      client,
-      emiRecords,
-    });
+    const branding = this.brandingService.get();
+    const htmlContent = EmailTemplateUtil.renderDeviceUnenrollOtpEmail({ toEmail, userName, otp, expiryMinutes }, branding);
 
     return this.queueEmail({
       recipientType: 'user',
       recipientId,
       toEmail,
       toName: userName,
-      subject: 'Device Unenroll OTP - Duetech',
+      subject: `Device Unenroll OTP - ${branding.appName}`,
       body: `Your device unenroll OTP is: ${otp}. Valid for ${expiryMinutes} minutes. Do not share this code.`,
       bodyHtml: htmlContent,
       emailType: EmailType.SECURITY_ALERT,
@@ -479,28 +438,6 @@ export class NotificationService {
     });
   }
 
-  /**
-   * Send payment reminder SMS
-   */
-  async sendPaymentReminderSMS(
-    recipientId: string,
-    recipientType: 'user' | 'client' | 'company',
-    toPhone: string,
-    toName: string,
-    amount: number,
-    dueDate: string,
-  ): Promise<SmsQueue> {
-    return this.queueSMS({
-      recipientType,
-      recipientId,
-      toPhone,
-      toName,
-      message: `Hi ${toName}, your EMI payment of ₹${amount} is due on ${dueDate}. Please pay on time. - Duetech`,
-      smsType: 'reminder',
-      priority: NotificationPriority.NORMAL,
-    });
-  }
-
   // ==================== PUSH NOTIFICATION METHODS ====================
 
   /**
@@ -538,87 +475,4 @@ export class NotificationService {
     return savedEntry;
   }
 
-  /**
-   * Send device alert push notification
-   */
-  async sendDeviceAlertPush(
-    recipientId: string,
-    recipientType: 'user' | 'client' | 'company',
-    deviceTokens: string[],
-    title: string,
-    body: string,
-    data?: Record<string, any>,
-  ): Promise<PushQueue> {
-    return this.queuePush({
-      recipientType,
-      recipientId,
-      deviceTokens,
-      title,
-      body,
-      data,
-      notificationType: 'alert',
-      priority: 'high',
-      queuePriority: NotificationPriority.HIGH,
-      channelId: 'device_alerts',
-      sound: 'default',
-    });
-  }
-
-  /**
-   * Send payment reminder push notification
-   */
-  async sendPaymentReminderPush(
-    recipientId: string,
-    recipientType: 'user' | 'client' | 'company',
-    deviceTokens: string[],
-    amount: number,
-    dueDate: string,
-  ): Promise<PushQueue> {
-    return this.queuePush({
-      recipientType,
-      recipientId,
-      deviceTokens,
-      title: 'Payment Reminder',
-      body: `Your EMI payment of ₹${amount} is due on ${dueDate}. Please pay on time.`,
-      data: {
-        type: 'payment_reminder',
-        amount: amount.toString(),
-        dueDate,
-      },
-      notificationType: 'reminder',
-      priority: 'normal',
-      queuePriority: NotificationPriority.NORMAL,
-      channelId: 'payment_reminders',
-      clickAction: 'OPEN_PAYMENTS',
-    });
-  }
-
-  /**
-   * Send key transfer notification
-   */
-  async sendKeyTransferPush(
-    recipientId: string,
-    recipientType: 'user' | 'client' | 'company',
-    deviceTokens: string[],
-    keys: number,
-    fromName: string,
-  ): Promise<PushQueue> {
-    return this.queuePush({
-      recipientType,
-      recipientId,
-      deviceTokens,
-      title: 'Keys Received',
-      body: `You received ${keys} keys from ${fromName}`,
-      data: {
-        type: 'key_transfer',
-        keys: keys.toString(),
-        fromName,
-      },
-      notificationType: 'update',
-      priority: 'normal',
-      queuePriority: NotificationPriority.NORMAL,
-      channelId: 'key_transfers',
-      clickAction: 'OPEN_BALANCE',
-    });
-  }
 }

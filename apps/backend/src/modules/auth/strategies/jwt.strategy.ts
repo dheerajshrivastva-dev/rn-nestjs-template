@@ -52,17 +52,16 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       if (blocked) throw new UnauthorizedException('Token has been revoked');
     }
 
-    // In test environment, don't load relations to avoid deadlock with cleanDatabase
-    // Test cleanup truncates tables while JWT validation might be reading relations
-    const isTestEnv = process.env.NODE_ENV === 'test';
-
     const user = await this.userRepository.findOne({
       where: { id: payload.sub },
-      relations: isTestEnv ? [] : ['company'],
     });
 
     if (!user) {
       throw new UnauthorizedException('User not found or token invalid');
+    }
+
+    if (user.status === UserStatus.PENDING_APPROVAL) {
+      throw new UnauthorizedException('Account is pending approval');
     }
 
     if (user.status === UserStatus.INACTIVE) {

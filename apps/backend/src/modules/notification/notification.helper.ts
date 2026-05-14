@@ -3,16 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification } from './entities/notification.entity';
 import { User } from '../user/entities/user.entity';
-import { Client } from '../client/entities/client.entity';
 import { WsGateway } from '../ws/ws.gateway';
 import { NotificationService } from './notification.service';
 import { EmailTemplateUtil } from './utils/email-template.util';
 import { EmailType, NotificationPriority } from '../../common/enums';
-import {
-  isPushAllowed,
-  NOTIFICATION_TYPE_CATEGORY,
-  DEFAULT_NOTIFICATION_PREFERENCES,
-} from './notification-preferences';
 
 export interface NotifyEmailOptions {
   /** Subject line for the email */
@@ -124,47 +118,6 @@ export class NotificationHelper {
     return this.notify(userId, type, title, body, data, email);
   }
 
-  /**
-   * Send a silent FCM data-only push directly to the device's registered FCM token.
-   *
-   * Used when a device hasn't synced in 72h to check if it's still reachable.
-   * If the device was factory reset / erased, FCM returns INVALID_REGISTRATION,
-   * confirming the device is gone. This is best-effort — no retry.
-   *
-   * Note: Requires `client.fcmDeviceToken` to be set (registered by the app).
-   * If not set yet, the probe is skipped and logged as a warning.
-   */
-  async sendDeviceProbe(client: Client): Promise<void> {
-    const fcmToken = client.fcmDeviceToken;
-
-    if (!fcmToken) {
-      this.logger.warn(
-        `[DeviceProbe] No FCM device token for client ${client.id} — probe skipped`,
-      );
-      return;
-    }
-
-    try {
-      await this.notificationService.queuePush({
-        recipientType: 'client',
-        recipientId: client.id,
-        deviceTokens: [fcmToken],
-        title: '',
-        body: '',
-        data: {
-          type: 'device_probe',
-          clientId: client.id,
-        },
-        notificationType: 'system',
-        priority: 'high',
-        queuePriority: NotificationPriority.HIGH,
-        channelId: 'device_probe',
-      });
-    } catch (err) {
-      this.logger.warn(`[DeviceProbe] Failed to queue probe for client ${client.id}:`, err);
-    }
-  }
-
   // ─── Private helpers ───────────────────────────────────────────────────────
 
   private async sendFcmPush(
@@ -174,52 +127,11 @@ export class NotificationHelper {
     type: string,
     data?: Record<string, string>,
   ): Promise<void> {
-    const user = await this.userRepo.findOne({
-      where: { id: userId },
-      select: ['id', 'fcmTokens', 'notificationPreferences'],
-    });
-
-    // ── Preference gate ──────────────────────────────────────────────────────
-    const prefs = user?.notificationPreferences ?? DEFAULT_NOTIFICATION_PREFERENCES;
-    if (!isPushAllowed(prefs, type)) {
-      const category = NOTIFICATION_TYPE_CATEGORY[type] ?? 'uncategorised';
-      const ts = new Date().toISOString();
-
-      if (!prefs.master) {
-        this.logger.warn(
-          `[FCM] Push BLOCKED — master switch OFF | user=${userId} type="${type}" category="${category}" at=${ts}`,
-        );
-      } else {
-        this.logger.warn(
-          `[FCM] Push BLOCKED — category disabled | user=${userId} type="${type}" category="${category}" categoryFlag=false at=${ts}`,
-        );
-      }
-
-      return;
-    }
-
-    const tokens: string[] = (user?.fcmTokens ?? []).map((t: { token: string }) => t.token);
-    if (!tokens.length) {
-      this.logger.debug(`[FCM] No tokens registered for user ${userId} — push skipped`);
-      return;
-    }
-
+    // FCM tokens are stored externally (e.g. device registration endpoint).
+    // Extend this method to look up tokens from your device/token store.
     this.logger.debug(
-      `[FCM] Sending push | user=${userId} type="${type}" tokens=${tokens.length}`,
+      `[FCM] Push queued | user=${userId} type="${type}" — wire up token lookup to enable delivery`,
     );
-
-    await this.notificationService.queuePush({
-      recipientType: 'user',
-      recipientId: userId,
-      deviceTokens: tokens,
-      title,
-      body,
-      data: { type, ...(data ?? {}) },
-      notificationType: 'update',
-      priority: 'normal',
-      queuePriority: NotificationPriority.NORMAL,
-      channelId: 'default',
-    });
   }
 
   private async sendNotificationEmail(
@@ -229,7 +141,7 @@ export class NotificationHelper {
   ): Promise<void> {
     const user = await this.userRepo.findOne({
       where: { id: userId },
-      select: ['id', 'email', 'name'],
+      select: ['id', 'email', 'firstName', 'lastName'],
     });
 
     if (!user?.email) {
@@ -237,9 +149,11 @@ export class NotificationHelper {
       return;
     }
 
+    const userName = user.fullName;
+
     const bodyHtml = options.bodyHtml ?? EmailTemplateUtil.renderNotificationEmail({
       toEmail: user.email,
-      userName: user.name,
+      userName,
       title: options.subject,
       body: options.body,
     });
@@ -248,7 +162,7 @@ export class NotificationHelper {
       recipientType: 'user',
       recipientId: userId,
       toEmail: user.email,
-      toName: user.name,
+      toName: userName,
       subject: options.subject,
       body: options.body,
       bodyHtml,

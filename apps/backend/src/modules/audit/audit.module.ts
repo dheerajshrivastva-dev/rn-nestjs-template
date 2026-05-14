@@ -6,13 +6,11 @@ import { AuditService } from './audit.service';
 import { SystemHealthMonitorService } from './system-health-monitor.service';
 import { AuditLog } from './entities/audit-log.entity';
 import { User } from '../user/entities/user.entity';
-import { Client } from '../client/entities/client.entity';
-import { Order } from '../order/entities/order.entity';
 import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AuditLog, User, Client, Order]),
+    TypeOrmModule.forFeature([AuditLog, User]),
     BullModule.registerQueue(
       { name: 'email' },
       { name: 'sms' },

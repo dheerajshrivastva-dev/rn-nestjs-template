@@ -27,9 +27,9 @@ export class AuditController {
   ) {}
 
   @Get('logs')
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({
-    summary: 'Get audit logs (Super Admin only)',
+    summary: 'Get audit logs (Admin only)',
     description:
       'Retrieve system audit logs with filtering and pagination. ' +
       'Tracks all user actions, system events, and data modifications.',
@@ -47,7 +47,7 @@ export class AuditController {
   }
 
   @Get('health')
-  @Roles(UserRole.SUPER, UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({
     summary: 'Get system health status',
     description:
@@ -64,7 +64,7 @@ export class AuditController {
   }
 
   @Patch('maintenance')
-  @Roles(UserRole.SUPER_ADMIN)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({
     summary: 'Toggle maintenance mode (Super Admin only)',
     description: 'Enable or disable maintenance mode. A push notification is immediately sent to all Super Admins on change.',
@@ -80,7 +80,7 @@ export class AuditController {
   }
 
   @Get('maintenance')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.SUPER)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER)
   @ApiOperation({ summary: 'Get current maintenance mode status' })
   @ApiResponse({ status: 200, description: 'Maintenance mode status' })
   getMaintenanceStatus(): { maintenance: boolean } {

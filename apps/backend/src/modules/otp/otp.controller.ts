@@ -77,22 +77,17 @@ export class OtpController {
     switch (otpType) {
       case OtpType.EMAIL_VERIFICATION:
         await this.notificationService.sendEmailVerification(
-          user.id, user.email, user.name, code,
+          user.id, user.email, user.fullName, code,
         );
         break;
       case OtpType.PASSWORD_RESET:
         await this.notificationService.sendPasswordResetEmail(
-          user.id, user.email, user.name, code,
+          user.id, user.email, user.fullName, code,
         );
         break;
       case OtpType.LOGIN_2FA:
         await this.notificationService.send2FAEmail(
-          user.id, user.email, user.name, code,
-        );
-        break;
-      case OtpType.DEVICE_UNENROLL:
-        await this.notificationService.sendDeviceUnenrollOtpEmail(
-          user.id, user.email, user.name, code,
+          user.id, user.email, user.fullName, code,
         );
         break;
       default:

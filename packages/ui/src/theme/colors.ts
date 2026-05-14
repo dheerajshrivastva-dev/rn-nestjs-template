@@ -60,59 +60,59 @@ export interface MD3ColorScheme {
 }
 
 /**
- * Light Theme Colors
+ * Light Theme Colors — Material Design 3 Blue
  */
 export const lightColors: MD3ColorScheme = {
-  // Primary - Deep Blue (for trust & professionalism)
+  // Primary
   primary: '#1976D2',
   onPrimary: '#FFFFFF',
-  primaryContainer: '#BBDEfb',
-  onPrimaryContainer: '#001D36',
+  primaryContainer: '#D3E4FF',
+  onPrimaryContainer: '#001C3D',
 
-  // Secondary - Teal (for accents)
+  // Secondary
   secondary: '#00897B',
   onSecondary: '#FFFFFF',
-  secondaryContainer: '#A7FFEB',
-  onSecondaryContainer: '#002018',
+  secondaryContainer: '#B2DFDB',
+  onSecondaryContainer: '#002021',
 
-  // Tertiary - Purple (for highlights)
-  tertiary: '#6200EA',
+  // Tertiary
+  tertiary: '#7C4DFF',
   onTertiary: '#FFFFFF',
-  tertiaryContainer: '#E1BEE7',
-  onTertiaryContainer: '#1A0033',
+  tertiaryContainer: '#EDE7F6',
+  onTertiaryContainer: '#21005D',
 
-  // Error - Red
-  error: '#D32F2F',
+  // Error
+  error: '#B3261E',
   onError: '#FFFFFF',
-  errorContainer: '#FFCDD2',
+  errorContainer: '#F9DEDC',
   onErrorContainer: '#410002',
 
   // Background
-  background: '#FAFAFA',
+  background: '#FDFCFF',
   onBackground: '#1A1C1E',
 
   // Surface
-  surface: '#FFFFFF',
+  surface: '#FDFCFF',
   onSurface: '#1A1C1E',
   surfaceVariant: '#E0E2EC',
-  onSurfaceVariant: '#43474E',
+  onSurfaceVariant: '#44474F',
 
-  // Surface containers (elevation tint)
+  // Surface containers
   surfaceContainerLowest: '#FFFFFF',
-  surfaceContainerLow: '#F5F5F7',
-  surfaceContainer: '#EEEFF3',
-  surfaceContainerHigh: '#E8E9ED',
-  surfaceContainerHighest: '#E2E3E7',
+  surfaceContainerLow: '#F7F2FA',
+  surfaceContainer: '#F3EDF7',
+  surfaceContainerHigh: '#ECE6F0',
+  surfaceContainerHighest: '#E6E0E9',
 
   // Outline
-  outline: '#73777F',
-  outlineVariant: '#C3C6CF',
+  outline: '#74777F',
+  outlineVariant: '#C4C7CF',
 
   // Other
   shadow: '#000000',
   scrim: '#000000',
   inverseSurface: '#2E3135',
-  inverseOnSurface: '#F0F0F3',
+  inverseOnSurface: '#F1F0F4',
   inversePrimary: '#90CAF9',
 };
 

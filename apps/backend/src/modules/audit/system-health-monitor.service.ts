@@ -246,7 +246,7 @@ export class SystemHealthMonitorService {
     let admins: User[];
     try {
       admins = await this.userRepo.find({
-        where: { role: UserRole.SUPER_ADMIN },
+        where: { role: UserRole.ADMIN },
         select: ['id'],
       });
     } catch (err) {

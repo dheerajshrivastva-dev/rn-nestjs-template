@@ -5,12 +5,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { Repository } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
-import { UserStatus, UserRole } from '../../../common/enums';
+import { UserStatus, UserRole, ROLE_AUTHORITY } from '../../../common/enums';
 
-/**
- * Google OAuth2 Strategy
- * Handles "Sign in with Google" for users
- */
+// Roles that can be self-requested via Google OAuth registration
+const GOOGLE_ALLOWED_ROLES: UserRole[] = [UserRole.USER, UserRole.MANAGER];
+
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(
@@ -23,81 +22,86 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET'),
       callbackURL: configService.get<string>('GOOGLE_CALLBACK_URL'),
       scope: ['email', 'profile'],
+      // Pass state through so we can carry the requested role
+      passReqToCallback: false,
+      state: true,
     });
   }
 
-  /**
-   * Called after Google successfully authenticates the user
-   * Supports both login and signup flows
-   *
-   * @param accessToken - Google's access token (can be stored if you need Google API access)
-   * @param refreshToken - Google's refresh token
-   * @param profile - User's Google profile data
-   * @param done - Callback function
-   */
+  // passport-google-oauth20 with state=true calls validate with
+  // (accessToken, refreshToken, params, profile, done)
+  // where params.state is the raw state string we encoded
   async validate(
     _accessToken: string,
     _refreshToken: string,
+    params: any,
     profile: any,
     done: VerifyCallback,
   ): Promise<any> {
-    const { id, emails, displayName, photos } = profile;
+    const { emails, displayName } = profile;
 
     if (!emails || emails.length === 0) {
-      throw new UnauthorizedException('No email found in Google account');
+      return done(new UnauthorizedException('No email found in Google account'), false);
     }
 
     const email = emails[0].value;
 
+    // Decode requested role from OAuth state (set by the /auth/google route)
+    let requestedRole = UserRole.USER;
     try {
-      // Check if user already exists
-      let user = await this.userRepository.findOne({
-        where: { email },
-        relations: ['company'],
-      });
+      const stateData = JSON.parse(
+        Buffer.from(params?.state ?? '', 'base64url').toString('utf8'),
+      );
+      if (stateData?.role && Object.values(UserRole).includes(stateData.role)) {
+        requestedRole = stateData.role as UserRole;
+      }
+    } catch {
+      // Malformed state — default to USER
+    }
+
+    // Only allow roles the caller is permitted to self-request
+    if (!GOOGLE_ALLOWED_ROLES.includes(requestedRole)) {
+      requestedRole = UserRole.USER;
+    }
+
+    try {
+      let user = await this.userRepository.findOne({ where: { email } });
 
       if (!user) {
-        // Auto-register new user with Google OAuth
+        const nameParts = (displayName || '').split(' ');
         user = this.userRepository.create({
           email,
-          name: displayName || email.split('@')[0],
-          googleId: id,
-          role: UserRole.RETAILER,
-          status: UserStatus.INACTIVE, // Needs admin approval
-          // No password needed for Google OAuth users
-          // No company initially
+          firstName: nameParts[0] || email.split('@')[0],
+          lastName: nameParts.slice(1).join(' ') || undefined,
+          role: requestedRole,
+          status: UserStatus.PENDING_APPROVAL,
         });
-
         user = await this.userRepository.save(user);
 
-        // Return newly created user (will have INACTIVE status)
-        done(null, user);
-        return;
+        // Attach a flag so the callback handler can tell the frontend
+        (user as any).isNewRegistration = true;
+        return done(null, user);
       }
 
-      // Existing user - update Google ID and profile picture if not set
-      if (!user.googleId) {
-        await this.userRepository.update(user.id, {
-          googleId: id,
-        });
-        user.googleId = id;
-      }
-
-      // Check user status
-      if (user.status === UserStatus.INACTIVE) {
-        throw new UnauthorizedException(
-          'Your account is pending approval. Please contact an administrator.',
+      // Existing user — enforce status
+      if (user.status === UserStatus.PENDING_APPROVAL) {
+        return done(
+          new UnauthorizedException('Your account is pending approval. Please contact an administrator.'),
+          false,
         );
       }
 
-      if (user.status === UserStatus.SUSPENDED) {
-        throw new UnauthorizedException('Your account has been suspended.');
+      if (user.status === UserStatus.INACTIVE) {
+        return done(new UnauthorizedException('Your account is inactive.'), false);
       }
 
-      // Pass user to the callback
-      done(null, user);
+      if (user.status === UserStatus.SUSPENDED) {
+        return done(new UnauthorizedException('Your account has been suspended.'), false);
+      }
+
+      return done(null, user);
     } catch (error) {
-      done(error, false);
+      return done(error, false);
     }
   }
 }

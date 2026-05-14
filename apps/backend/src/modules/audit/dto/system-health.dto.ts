@@ -50,8 +50,6 @@ export class SystemHealthResponseDto {
   statistics: {
     uptime: number; // seconds
     totalUsers: number;
-    totalClients: number;
-    totalOrders: number;
     activeConnections: number;
   };
 }

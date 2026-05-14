@@ -5,8 +5,6 @@ import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 import { AuditLog, AuditAction } from './entities/audit-log.entity';
 import { User } from '../user/entities/user.entity';
-import { Client } from '../client/entities/client.entity';
-import { Order } from '../order/entities/order.entity';
 import { AuditLogQueryDto, AuditLogResponseDto } from './dto/audit-log-query.dto';
 import { SystemHealthResponseDto } from './dto/system-health.dto';
 
@@ -20,10 +18,6 @@ export class AuditService {
     private readonly auditLogRepository: Repository<AuditLog>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Client)
-    private readonly clientRepository: Repository<Client>,
-    @InjectRepository(Order)
-    private readonly orderRepository: Repository<Order>,
     @InjectQueue('email')
     private readonly emailQueue: Queue,
     @InjectQueue('sms')
@@ -278,25 +272,10 @@ export class AuditService {
    */
   private async getSystemStatistics() {
     try {
-      const [totalUsers, totalClients, totalOrders] = await Promise.all([
-        this.userRepository.count(),
-        this.clientRepository.count(),
-        this.orderRepository.count(),
-      ]);
-
-      return {
-        totalUsers,
-        totalClients,
-        totalOrders,
-        activeConnections: 0,
-      };
+      const totalUsers = await this.userRepository.count();
+      return { totalUsers, activeConnections: 0 };
     } catch (error) {
-      return {
-        totalUsers: 0,
-        totalClients: 0,
-        totalOrders: 0,
-        activeConnections: 0,
-      };
+      return { totalUsers: 0, activeConnections: 0 };
     }
   }
 
