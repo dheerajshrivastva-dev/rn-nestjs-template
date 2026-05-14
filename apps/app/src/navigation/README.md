@@ -1,6 +1,6 @@
 # Navigation — Quick Reference
 
-**React Navigation v7 — Native Stack + Drawer**
+## React Navigation v7 — Native Stack + Drawer
 
 ## Quick Start
 
