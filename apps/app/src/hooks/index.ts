@@ -20,6 +20,8 @@ export * from './queries/useMe';
 export * from './queries/useBiometrics';
 export * from './queries/useSessions';
 export * from './queries/useNotifications';
+export * from './queries/useUserById';
+export * from './queries/useUsers';
 
 // Utilities
 export * from './useDebounce';

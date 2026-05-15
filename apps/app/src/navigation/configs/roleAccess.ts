@@ -62,7 +62,7 @@ export function getAccessibleScreens(userRole: UserRole): string[] {
     .map(([screen]) => screen);
 }
 
-export const roleDisplayNames: Record<UserRole, string> = {
+export const roleDisplayNames: Partial<Record<UserRole, string>> = {
   [UserRole.ADMIN]: 'Admin',
   [UserRole.MANAGER]: 'Manager',
   [UserRole.USER]: 'User',

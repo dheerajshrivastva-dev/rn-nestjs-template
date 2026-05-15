@@ -64,7 +64,7 @@ export const useUpdatePassword = () => {
       // Choose appropriate endpoint
       const endpoint = isOwnPassword
         ? USER_ENDPOINTS.CHANGE_OWN_PASSWORD
-        : USER_ENDPOINTS.UPDATE_PASSWORD;
+        : USER_ENDPOINTS.UPDATE_PASSWORD(userId);
 
       const response = await apiClient.post<UpdatePasswordResponse>(
         endpoint,

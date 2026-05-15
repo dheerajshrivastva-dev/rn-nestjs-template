@@ -9,6 +9,8 @@
 
 export const AuthScreens = {
   Login: 'auth/login',
+  Register: 'auth/register',
+  PendingApproval: 'auth/pending-approval',
   OTP: 'auth/otp',
   ForgotPassword: 'auth/forgot-password',
   ResetPassword: 'auth/reset-password',
@@ -32,6 +34,7 @@ export const AccountScreens = {
   ChangePassword: 'account/change-password',
   TwoFactor: 'account/two-factor',
   Sessions: 'account/sessions',
+  Security: 'account/security',
 } as const;
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────
@@ -42,13 +45,15 @@ export const DashboardScreens = {
   Main: 'dashboard/main',
 } as const;
 
-// ─── TODO: Add your domain screen groups here ─────────────────────────────────
-// Example:
-// export const ProjectScreens = {
-//   List: 'project/list',
-//   Detail: 'project/detail',
-//   Create: 'project/create',
-// } as const;
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+export const UserScreens = {
+  List: 'users/list',
+  Detail: 'users/detail',
+  Dashboard: 'users/dashboard',
+  Create: 'users/create',
+  Edit: 'users/edit',
+} as const;
 
 // ─── Union ────────────────────────────────────────────────────────────────────
 
@@ -57,6 +62,7 @@ export const AllScreens = {
   ...SharedScreens,
   ...AccountScreens,
   ...DashboardScreens,
+  ...UserScreens,
 } as const;
 
 // ─── Types ────────────────────────────────────────────────────────────────────

@@ -12,15 +12,7 @@ import type { NotificationPreferences } from '../api/types';
 
 const DEFAULT_PREFERENCES: NotificationPreferences = {
   master: true,
-  orders: true,
-  pendingOrders: true,
-  keyTransfers: true,
-  transferRequests: true,
   systemAlerts: true,
-  clientActivity: true,
-  deviceAlerts: true,
-  emiReminders: true,
-  lowBalanceAlert: true,
 };
 
 /**

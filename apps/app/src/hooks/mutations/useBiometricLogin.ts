@@ -107,22 +107,18 @@ export const useBiometricLogin = () => {
             const minimalUser: User = {
               ...data.user,
               phone: '',
-              balance: 0,
-              twoFactorEnabled: false,
+              name: `${data.user.firstName} ${data.user.lastName}`,
+              userId: data.user.id,
+              is2FAEnabled: (data.user as any).is2FAEnabled ?? false,
+            twoFactorEnabled: (data.user as any).is2FAEnabled ?? false,
               emailVerified: false,
               phoneVerified: false,
               profilePicture: null,
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
               companyId: null,
-              parentUserId: null,
-              hierarchyLevel: 0,
-              hierarchyPath: '',
-              commissionPercentage: '0',
               totalClients: 0,
-              activeClients: 0,
               lastLoginAt: null,
-              userId: data.user.id,
             };
             setUser(minimalUser);
           }

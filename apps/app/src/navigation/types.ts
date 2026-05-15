@@ -14,6 +14,7 @@ import {
   SharedScreens,
   AccountScreens,
   DashboardScreens,
+  UserScreens,
 } from './screens';
 
 /* =====================================================
@@ -24,13 +25,16 @@ export type RootStackParamList = {
   Public: undefined;
   Private: NavigatorScreenParams<MainStackParamList>;
   BiometricVerification: undefined;
+  PinSetup: undefined;
 };
 
 /* =====================================================
    Public / Auth Stack
    ===================================================== */
 export type PublicStackParamList = {
-  [AuthScreens.Login]: undefined;
+  [AuthScreens.Login]: { phone?: string; countryCode?: string } | undefined;
+  [AuthScreens.Register]: undefined;
+  [AuthScreens.PendingApproval]: undefined;
   [AuthScreens.OTP]: {
     message?: string;
     primaryMethod?: 'email_otp' | 'mobile_otp' | 'totp';
@@ -95,6 +99,20 @@ export type AccountStackParamList = Pick<
 >;
 
 export type AccountStackNavigationProp = NativeStackNavigationProp<AccountStackParamList>;
+
+/* =====================================================
+   User Stack
+   ===================================================== */
+export type UserStackParamList = {
+  [UserScreens.List]: { companyId?: string } | undefined;
+  [UserScreens.Detail]: { userId: string };
+  [UserScreens.Dashboard]: { userId: string };
+  [UserScreens.Create]: undefined;
+  [UserScreens.Edit]: { userId: string };
+};
+
+export type UserStackNavigationProp = NativeStackNavigationProp<UserStackParamList>;
+export type UsersStackNavigationProp = NativeStackNavigationProp<UserStackParamList>;
 
 /* =====================================================
    FCM / Push Notification Types

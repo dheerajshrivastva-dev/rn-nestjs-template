@@ -8,8 +8,12 @@
 // ============================================================================
 
 export enum UserRole {
+  SUPER_ADMIN = 'super_admin',
+  SUPER = 'super',
   ADMIN = 'admin',
   MANAGER = 'manager',
+  DISTRIBUTOR = 'distributor',
+  RETAILER = 'retailer',
   USER = 'user',
 }
 
@@ -44,6 +48,33 @@ export interface DeviceInfo {
 // ============================================================================
 // Authentication
 // ============================================================================
+
+export interface RegisterRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  password: string;
+}
+
+export interface AccountExistsError {
+  code: 'ACCOUNT_EXISTS';
+  field: 'email' | 'phone';
+  message: string;
+}
+
+export interface RegisterResponse {
+  message: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    role: UserRole;
+    status: string;
+  };
+}
 
 export interface LoginRequest {
   email: string;
@@ -151,16 +182,22 @@ export interface ResetPasswordResponse {
 
 export interface User {
   id: string;
+  userId: string;
+  name: string;
   firstName: string;
   lastName: string;
   email: string;
-  phone?: string;
+  phone: string;
   role: UserRole;
   status: UserStatus;
   avatarUrl?: string | null;
+  profilePicture?: { url: string; publicId: string } | null;
+  companyId?: string | null;
   emailVerified: boolean;
   phoneVerified: boolean;
   is2FAEnabled: boolean;
+  twoFactorEnabled: boolean;
+  totalClients?: number;
   lastLoginAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -178,6 +215,41 @@ export interface UpdateProfileRequest {
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
+}
+
+export interface UpdatePasswordRequest {
+  userId?: string;
+  newPassword: string;
+  currentPassword?: string;
+  logoutAllDevices?: boolean;
+  reset2FA?: boolean;
+  replace2FAWithMethod?: string | null;
+  reason?: string;
+}
+export interface UpdatePasswordResponse {
+  message: string;
+  success: boolean;
+  devicesLoggedOut?: number;
+  twoFactorStatus?: { enabled: boolean };
+}
+
+export type UseLoginInput = Pick<LoginRequest, 'password'> & { identifier: string };
+
+export interface UserSettings {
+  lowBalanceThreshold?: number;
+  autoLockDeviceWhenEmiDue?: boolean;
+  lockGracePeriodDays?: number;
+  notificationsEnabled?: boolean;
+  biometricEnabled?: boolean;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  status: string;
+  baseKeyRate?: number;
+  taxPercentage?: number;
+  [key: string]: unknown;
 }
 
 // ============================================================================
@@ -222,7 +294,7 @@ export type BiometricLoginResponse = LoginResponse;
 export interface NotificationPreferences {
   master: boolean;
   systemAlerts: boolean;
-  // TODO: Add app-specific notification preferences here
+  [key: string]: boolean | undefined;
 }
 
 // ============================================================================

@@ -4,13 +4,14 @@
  */
 
 export const API_BASE_URL = __DEV__
-  ? 'http://192.168.1.10:3000'
-  : 'https://api.yourapp.com';
+  ? 'http://192.168.1.12:3000'
+  : 'https://ops.bevarc.com';
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export const AUTH_ENDPOINTS = {
   LOGIN: '/auth/login',
+  REGISTER: '/auth/register',
   COMPLETE_2FA: '/auth/complete-2fa',
   REFRESH: '/auth/refresh',
   LOGOUT: '/auth/logout',
@@ -40,6 +41,7 @@ export const USER_ENDPOINTS = {
   GET_BY_ID: (id: string) => `/users/${id}`,
   GET_ALL: '/users',
   UPDATE: (id: string) => `/users/${id}`,
+  CREATE: '/users',
 
   // 2FA
   GET_2FA_STATUS: '/users/me/2fa/status',
@@ -56,6 +58,7 @@ export const USER_ENDPOINTS = {
 
   // Password
   CHANGE_OWN_PASSWORD: '/users/me/change-password',
+  UPDATE_PASSWORD: (id: string) => `/users/${id}/password`,
 
   // Email verification
   SEND_EMAIL_VERIFICATION: '/users/me/send-email-verification',
@@ -73,6 +76,7 @@ export const NOTIFICATIONS_ENDPOINTS = {
   MARK_ALL_READ: '/notifications/read-all',
   UNREAD_COUNT: '/notifications/unread-count',
   PREFERENCES: '/notifications/preferences',
+  USER_SETTINGS: '/notifications/user-settings',
 } as const;
 
 // ─── Audit ────────────────────────────────────────────────────────────────────

@@ -75,22 +75,18 @@ export const useLogin = () => {
           const minimalUser: User = {
             ...userData,
             phone: '',
-            balance: 0,
-            twoFactorEnabled: false,
+            name: `${userData.firstName} ${userData.lastName}`,
+            userId: userData.id,
+            is2FAEnabled: (userData as any).is2FAEnabled ?? false,
+            twoFactorEnabled: (userData as any).is2FAEnabled ?? false,
             emailVerified: false,
             phoneVerified: false,
             profilePicture: null,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             companyId: null,
-            parentUserId: null,
-            hierarchyLevel: 0,
-            hierarchyPath: '',
-            commissionPercentage: '0',
             totalClients: 0,
-            activeClients: 0,
             lastLoginAt: null,
-            userId: userData.id,
           };
           console.log('⚠️ Using minimal user data:', minimalUser.role);
           setUser(minimalUser);
